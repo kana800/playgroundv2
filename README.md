@@ -7,3 +7,4 @@ This repository mainly consist of tutorials, examples and other small projects t
 |Name|Vault Tags|
 |----|----------|
 | [Rust Guide Book](rustacean) | `rust` `guidebook` |
+| [Little Book of Semaphores](semaphorespractices) | `cpp` `multithreading` |
