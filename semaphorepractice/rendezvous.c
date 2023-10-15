@@ -9,7 +9,6 @@
 #include <semaphore.h>
 #include <unistd.h>
 
-// line read is completed
 sem_t a1done;
 sem_t b1done;
 

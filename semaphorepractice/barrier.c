@@ -14,42 +14,55 @@
 #include <semaphore.h>
 #include <unistd.h>
 
-// line read is completed
-sem_t a1done;
-sem_t b1done;
+#define UPPERLIMIT 5
 
-void* threadA(void* parg)
-{
-	printf("statement a1\n");
-	sem_post(&a1done);
-	sem_wait(&b1done);
-	printf("statement a2\n");
-}
+int count = 0;
+pthread_mutex_t cntlock;
+pthread_t threadarr[UPPERLIMIT];
 
-void* threadB(void* parg)
-{
-	printf("statement b1\n");
-	sem_post(&b1done);
-	sem_wait(&a1done);
-	printf("statement b2\n");
+sem_t rendezvous;
+
+void* genericThread(void* parg)
+{	
+	pthread_mutex_lock(&cntlock);
+	count = count + 1;
+
+	if (count == UPPERLIMIT)
+	{
+		for (int i = 0; i < UPPERLIMIT - 1; i++)
+		{
+			printf("%d Thread : Rendezvous Completed\n", i);
+			sem_post(&rendezvous);
+		}
+	}
+
+	printf("%ld Thread is At Critical Section\n", (long)parg);
+	pthread_mutex_unlock(&cntlock);
+	pthread_exit(0);
 }
 
 int main(int argc, char* argv[])
 {
+	if (pthread_mutex_init(&cntlock, NULL) != 0)
+	{
+		fprintf(stderr, "Mutex Initialization Failed\n");
+		return 1;
+	}
+	
+	sem_init(&rendezvous, 0 ,0);
+	
+	for (long i = 0; i < UPPERLIMIT; i++)
+	{
+		pthread_create(&(threadarr[i]), NULL, genericThread, (void*) i);
+	}
 
-	sem_init(&a1done, 0, 0);
-	sem_init(&b1done, 0, 0);
+	for (int i = 0; i < UPPERLIMIT; i++)
+	{
+		pthread_join(threadarr[i], NULL);
+	}
 
-	pthread_t t1, t2;
-	
-	pthread_create(&t2, NULL, threadA, NULL);
-	pthread_create(&t1, NULL, threadB, NULL);
-	
-	pthread_join(t1, NULL);
-	pthread_join(t2, NULL);
-	
-	sem_destroy(&a1done);
-	sem_destroy(&b1done);
+	pthread_mutex_destroy(&cntlock);
+	sem_destroy(&rendezvous);
 
 	return 0;
 }
