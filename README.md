@@ -4,7 +4,8 @@ This repository mainly consist of tutorials, examples and other small projects t
 
 ### Map-Of-Content
 
-|Name|Vault Tags|
-|----|----------|
-| [Rust Guide Book](rustacean) | `rust` `guidebook` |
-| [Little Book of Semaphores](semaphorespractices) | `cpp` `multithreading` |
+|Name|Vault Category | Vault Tags|
+|----|------| ----|
+| [Rust Guide Book](rustacean) | `reading` |`rust` `guidebook` |
+| [Little Book of Semaphores](semaphorespractices) | `reading` |`cpp` `multithreading` |
+| [Deep C Secrets Van Der Linden](deepc) | `reading` |`reading` `books` `c` |
