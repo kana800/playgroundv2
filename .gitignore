@@ -66,3 +66,4 @@ Cargo.lock
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+pap/listing_0037_single_register_mov
