@@ -9,6 +9,9 @@ day2: 2.c
 day3: 3.c
 	$(CC) -g $^ -o $@.o
 
+day4: 4.c
+	$(CC) -g $^ -o $@.o
+
 clean: 
 	rm -rf *.o 
 	echo clean completed
