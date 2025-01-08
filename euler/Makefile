@@ -18,6 +18,9 @@ day5: 5.c
 day6: 6.c
 	$(CC) -g $^ -o $@.o
 
+day7: 7.c primes.h
+	$(CC) -g $^ -o $@.o
+
 clean: 
 	rm -rf *.o 
 	echo clean completed
