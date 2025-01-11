@@ -16,19 +16,20 @@
  *   -> word ( W=1 ) the whole world is being transferred
  */
 
-char* REG_W_0[8] = {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "AH"};
-char* REG_W_1[8] = {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"};
+// REG_TABLE[w][idx]
+char* REG_TABLE[2][8] = {
+    {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "AH"},
+    {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"}
+};
 
+char* RM_TABLE[3][8] = {
+    {"[BX + SI]", "[BX + DI]", "[BP + SP]", "[BP + DI]", "SI", "DI", "", "BX"},
+    {"[BX + SI]", "[BX + DI]", "[BP + SP]", "[BP + DI]", "SI", "DI", "", "BX"},
+    {"[BX + SI]", "[BX + DI]", "[BP + SP]", "[BP + DI]", "SI", "DI", "", "BX"}
+};
 
-int main(int argc, char* argv[]) 
+void decode(unsigned char buffer[])
 {
-    unsigned char buffer[6];
-
-    FILE* fptr = fopen(argv[1], "rb");
-    if (fptr) {
-        fread(buffer, sizeof(buffer), 1, fptr);
-    }
-
     unsigned char opcode = buffer[0] >> 2; 
     unsigned char dw = buffer[0] << 6;
     unsigned char d,w;
@@ -37,115 +38,129 @@ int main(int argc, char* argv[])
     unsigned char mod = buffer[1] & 11000000;
     unsigned char reg = (buffer[1] << 2 ) & 11100000;
     unsigned char rm = buffer[1] << 5;
-    printf("%x %x", buffer[0], buffer[1]);
-    printf("buffer1 %x", buffer[1]);
-    printf("mod %x reg %x\n", mod, reg);
-
-    switch (opcode)
-    {
-        case 0x22:
-            printf("MOV\n"); // prints a series of bytes
-            break;
-    }
 
     switch (dw)
     {   
         case 0x00:
-            printf("8 bits is being transferred from the register (D=0,W=0)\n");
             d = 0;
             w = 0;
             break;
         case 0x40:
-            printf("16 bits is being transferred from the register (D=0,W=1)\n");
             d = 0;
             w = 1;
             break;
         case 0x80:
-            printf("8 bits is being transferred to the register (D=1,W=0)\n");
             d = 1;
             w = 0;
             break;
         case 0xC0:
-            printf("16 bits is being transferred to the register (D=1,W=1)");
             d = 1;
             w = 1;
             break;
     }
 
+    int m;
     switch (mod)
     {
         case 0x00:
-            printf("memory mode with no displacement\n");
+            m = 0;
             break;
         case 0x40:
-            printf("memory mode with 8 bit displacement\n");
+            m = 1;
             break;
         case 0x80:
-            printf("memory mode with 16 bit displacement\n");
+            m = 2;
             break;
         case 0xC0:
-            printf("register mode\n");
+            m = 3;
             break;
     }
 
-    int idx;
+    int reg_idx;
     switch (reg)
     {
         case 0x00:
-            idx = 0;
+            reg_idx = 0;
             break;
         case 0x20:
-            idx = 1;
+            reg_idx = 1;
             break;
         case 0x40:
-            idx = 2;
+            reg_idx = 2;
             break;
         case 0x60:
-            idx = 3;
+            reg_idx = 3;
             break;
         case 0x80:
-            idx = 4;
+            reg_idx = 4;
             break;
         case 0xA0:
-            idx = 5;
+            reg_idx = 5;
             break;
         case 0xC0:
-            idx = 6;
+            reg_idx = 6;
             break;
         case 0xE0:
-            idx = 7;
+            reg_idx = 7;
             break;
     }
     
+    int rm_idx;
     switch (rm)
     {
         case 0x00:
-            idx = 0;
+            rm_idx = 0;
             break;
         case 0x20:
-            idx = 1;
+            rm_idx = 1;
             break;
         case 0x40:
-            idx = 2;
+            rm_idx = 2;
             break;
         case 0x60:
-            idx = 3;
+            rm_idx = 3;
             break;
         case 0x80:
-            idx = 4;
+            rm_idx = 4;
             break;
         case 0xA0:
-            idx = 5;
+            rm_idx = 5;
             break;
         case 0xC0:
-            idx = 6;
+            rm_idx = 6;
             break;
         case 0xE0:
-            idx = 7;
+            rm_idx = 7;
             break;
     }
-     
 
+    switch (opcode)
+    {
+        case 0x22: // MOV
+            if (m == 3)
+            {
+                printf("MOV %s,%s\n",REG_TABLE[w][rm_idx],REG_TABLE[w][reg_idx]);
+            }
+            break;
+    }
+
+}
+
+
+int main(int argc, char* argv[]) 
+{
+    unsigned char buffer[6];
+
+    FILE* fptr = fopen(argv[1], "rb");
+    int count = 0;
+    while (!feof(fptr)) {
+        fread(buffer, sizeof(unsigned char), 2, fptr);
+        printf("%d %x %x\n", count, buffer[0], buffer[1]);
+//        while (fgets(buffer, 6, fptr)) {
+        decode(buffer);
+        count += 1;
+    }
+     
     fclose(fptr);
 
     return 0;
