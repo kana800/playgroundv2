@@ -1,5 +1,9 @@
 CC=gcc
 
+clean: 
+	rm -rf *.o 
+	echo clean completed
+
 day1: 1.c
 	$(CC) -g $^ -o $@.o
 
@@ -24,6 +28,7 @@ day7: 7.c primes.h
 day8: 8.c
 	$(CC) -g $^ -o $@.o
 
-clean: 
-	rm -rf *.o 
-	echo clean completed
+
+day9: 9.c
+	$(CC) -g $^ -o $@.o
+
