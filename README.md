@@ -4,8 +4,11 @@ This repository mainly consist of tutorials, examples and other small projects t
 
 ### Map-Of-Content
 
-|Name|Vault Category | Vault Tags|
+|Name|Vault Category | Vault Tags |
 |----|------| ----|
 | [Rust Guide Book](rustacean) | `reading` |`rust` `guidebook` |
 | [Little Book of Semaphores](semaphorespractices) | `reading` |`cpp` `multithreading` |
 | [Deep C Secrets Van Der Linden](deepc) | `reading` |`reading` `books` `c` |
+
+
+<span style="color:rgb(148,0,211)">color works</span>
