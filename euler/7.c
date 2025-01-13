@@ -4,27 +4,28 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include "primes.h"
 
-void sieveOfEratosthenes(int n)
+void sieveOfEratosthenes(long int n)
 {
     bool prime[n + 1];
     memset(prime, true, sizeof(prime));
 
-    for (int p = 2; p * p <= n; p++) {
+    for (long int p = 2; p * p <= n; p++) {
         if (prime[p] == true) {
-            for (int i = p * p; i <= n; i += p)
+            for (long int i = p * p; i <= n; i += p)
                 prime[i] = false;
         }
     }
 
-    for ( int i = 2; i <= n ; i++)
+    for ( long int i = 2; i <= n ; i++)
         if (prime[i]) {
-            printf("%d,", i);
+            printf("%ld,", i);
         }
 }
 
 int main(int argc, char** argv)
 {
-    printf("%d", GETPRIME(10001));
+    long int limit = 2000000;
+    sieveOfEratosthenes(limit);
+    return 0;
 }

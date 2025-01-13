@@ -22,13 +22,15 @@ day5: 5.c
 day6: 6.c
 	$(CC) -g $^ -o $@.o
 
-day7: 7.c primes.h
+day7: 7.c
 	$(CC) -g $^ -o $@.o
 
 day8: 8.c
 	$(CC) -g $^ -o $@.o
 
-
 day9: 9.c
+	$(CC) -g $^ -o $@.o
+
+day10: 10.c primes.h
 	$(CC) -g $^ -o $@.o
 
