@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <assert.h>
 
 /* 8086 instruction size is 1 to 6 bytes 
  * The first 6 bits determines the OpCode (operation code)
@@ -28,122 +29,154 @@ char* RM_TABLE[3][8] = {
     {"[bx + si]", "[bx + di]", "[bp + sp]", "[bp + di]", "si", "di", "", "bx"}
 };
 
-void decode(unsigned char buffer[])
+char* OPCODE_TABLE[1] = {"mov"};
+
+typedef struct __opcode__ {
+    int idx;
+    int d;
+    int w;
+    int mod;
+    int reg;
+    int rm;
+} opcode; 
+
+void decodeOptionalBytes(
+    unsigned char buffer[], size_t bytesread)
 {
-    unsigned char opcode = buffer[0] >> 2; 
+
+}
+
+opcode decodeOpCodeAddr(
+    unsigned char buffer[], size_t bytesread)
+{
+    opcode oc;
+    unsigned char opcode_b = buffer[0] >> 2; 
+    switch (opcode_b)
+    {
+        case 0b00100010: // mov
+            oc.idx = 0;
+            break;
+        default:
+            oc.idx = -1;
+            break;
+    }
+
     unsigned char dw = buffer[0] << 6;
-    unsigned char d,w;
-    // 11 011 001
-    // 01 100 100
+    switch (dw)
+    {   
+        case 0b00000000:
+            oc.d = 0;
+            oc.w = 0;
+            break;
+        case 0b01000000:
+            oc.d = 0;
+            oc.w = 1;
+            break;
+        case 0b10000000:
+            oc.d = 1;
+            oc.w = 0;
+            break;
+        case 0b11000000:
+            oc.d = 1;
+            oc.w = 1;
+            break;
+        default:
+            oc.d = -1;
+            oc.w = -1;
+            break;
+    }
+
+    assert(oc.d != -1);
+    assert(oc.w != -1);
+
     unsigned char mod = buffer[1] & 11000000;
     unsigned char reg = (buffer[1] << 2 ) & 11100000;
     unsigned char rm = buffer[1] << 5;
 
-    switch (dw)
-    {   
-        case 0x00:
-            d = 0;
-            w = 0;
-            break;
-        case 0x40:
-            d = 0;
-            w = 1;
-            break;
-        case 0x80:
-            d = 1;
-            w = 0;
-            break;
-        case 0xC0:
-            d = 1;
-            w = 1;
-            break;
-    }
-
-    int m;
     switch (mod)
     {
-        case 0x00:
-            m = 0;
+        case 0b00000000:
+            oc.mod = 0;
             break;
-        case 0x40:
-            m = 1;
+        case 0b01000000:
+            oc.mod = 1;
             break;
-        case 0x80:
-            m = 2;
+        case 0b10000000:
+            oc.mod = 2;
             break;
-        case 0xC0:
-            m = 3;
+        case 0b11000000:
+            oc.mod = 3;
+            break;
+        default:
+            oc.mod = -1;
             break;
     }
 
-    int reg_idx;
+    assert(oc.mod != -1);
+
     switch (reg)
     {
-        case 0x00:
-            reg_idx = 0;
+        case 0b00000000:
+            oc.reg = 0;
             break;
-        case 0x20:
-            reg_idx = 1;
+        case 0b00100000:
+            oc.reg = 1;
             break;
-        case 0x40:
-            reg_idx = 2;
+        case 0b01000000:
+            oc.reg = 2;
             break;
-        case 0x60:
-            reg_idx = 3;
+        case 0b01100000:
+            oc.reg = 3;
             break;
-        case 0x80:
-            reg_idx = 4;
+        case 0b10000000:
+            oc.reg = 4;
             break;
-        case 0xA0:
-            reg_idx = 5;
+        case 0b10100000:
+            oc.reg = 5;
             break;
-        case 0xC0:
-            reg_idx = 6;
+        case 0b11000000:
+            oc.reg = 6;
             break;
-        case 0xE0:
-            reg_idx = 7;
+        case 0b11100000:
+            oc.reg = 7;
             break;
+        default:
+            oc.reg = -1;
     }
-    
-    int rm_idx;
+
+    assert(oc.reg != -1);
+
     switch (rm)
     {
-        case 0x00:
-            rm_idx = 0;
+        case 0b00000000:
+            oc.rm = 0;
             break;
-        case 0x20:
-            rm_idx = 1;
+        case 0b00100000:
+            oc.rm = 1;
             break;
-        case 0x40:
-            rm_idx = 2;
+        case 0b01000000:
+            oc.rm = 2;
             break;
-        case 0x60:
-            rm_idx = 3;
+        case 0b01100000:
+            oc.rm = 3;
             break;
-        case 0x80:
-            rm_idx = 4;
+        case 0b10000000:
+            oc.rm = 4;
             break;
-        case 0xA0:
-            rm_idx = 5;
+        case 0b10100000:
+            oc.rm = 5;
             break;
-        case 0xC0:
-            rm_idx = 6;
+        case 0b11000000:
+            oc.rm = 6;
             break;
-        case 0xE0:
-            rm_idx = 7;
+        case 0b11100000:
+            oc.rm = 7;
             break;
+        default:
+            oc.rm = -1;
     }
 
-    switch (opcode)
-    {
-        case 0x22: // MOV
-            if (m == 3)
-            {
-                printf("mov %s,%s\n",REG_TABLE[w][rm_idx],REG_TABLE[w][reg_idx]);
-            }
-            break;
-    }
-
+    assert(oc.rm != -1);
 }
 
 
@@ -153,12 +186,13 @@ int main(int argc, char* argv[])
 
     FILE* fptr = fopen(argv[1], "rb");
     int count = 0;
+    size_t bytesread = 0;
     while (!feof(fptr)) {
-        fread(buffer, sizeof(unsigned char), 2, fptr);
-        decode(buffer);
+        bytesread = fread(buffer, sizeof(unsigned char), 6, fptr);
+        opcode oc = decodeOpCodeAddr(buffer, bytesread);
+        // decode(buffer, bytesread);
         count += 1;
     }
-     
     fclose(fptr);
 
     return 0;
