@@ -18,14 +18,14 @@
 
 // REG_TABLE[w][idx]
 char* REG_TABLE[2][8] = {
-    {"AL", "CL", "DL", "BL", "AH", "CH", "DH", "AH"},
-    {"AX", "CX", "DX", "BX", "SP", "BP", "SI", "DI"}
+    {"al", "cl", "dl", "bl", "ah", "ch", "dh", "ah"},
+    {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"}
 };
 
 char* RM_TABLE[3][8] = {
-    {"[BX + SI]", "[BX + DI]", "[BP + SP]", "[BP + DI]", "SI", "DI", "", "BX"},
-    {"[BX + SI]", "[BX + DI]", "[BP + SP]", "[BP + DI]", "SI", "DI", "", "BX"},
-    {"[BX + SI]", "[BX + DI]", "[BP + SP]", "[BP + DI]", "SI", "DI", "", "BX"}
+    {"[bx + si]", "[bx + di]", "[bp + sp]", "[bp + di]", "si", "di", "", "bx"},
+    {"[bx + si]", "[bx + di]", "[bp + sp]", "[bp + di]", "si", "di", "", "bx"},
+    {"[bx + si]", "[bx + di]", "[bp + sp]", "[bp + di]", "si", "di", "", "bx"}
 };
 
 void decode(unsigned char buffer[])
@@ -139,7 +139,7 @@ void decode(unsigned char buffer[])
         case 0x22: // MOV
             if (m == 3)
             {
-                printf("MOV %s,%s\n",REG_TABLE[w][rm_idx],REG_TABLE[w][reg_idx]);
+                printf("mov %s,%s\n",REG_TABLE[w][rm_idx],REG_TABLE[w][reg_idx]);
             }
             break;
     }
@@ -155,8 +155,6 @@ int main(int argc, char* argv[])
     int count = 0;
     while (!feof(fptr)) {
         fread(buffer, sizeof(unsigned char), 2, fptr);
-        printf("%d %x %x\n", count, buffer[0], buffer[1]);
-//        while (fgets(buffer, 6, fptr)) {
         decode(buffer);
         count += 1;
     }

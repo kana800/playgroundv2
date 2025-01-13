@@ -1,14 +1,17 @@
 CC=gcc
-
+CFLAGS= -g
 BUILDDIR := build
-TESTDIR := test
+TESTDIR := computer_enhance/perfaware
 
 sim: sim8086.c
-	$(CC) $^ -g -o $(BUILDDIR)/a.out
+	$(CC) $^ $(CFLAGS) -o $(BUILDDIR)/$@.out
 
-day1test: sim
-	nasm $(TESTDIR)/listing_0037_single_register_mov.asm -o $(BUILDDIR)/day1test1
-	nasm $(TESTDIR)/listing_0038_many_register_mov.asm -o $(BUILDDIR)/day1test2
-	$(BUILDDIR)/a.out $(BUILDDIR)/day1test1
-	echo "T2"
-	$(BUILDDIR)/a.out $(BUILDDIR)/day1test2
+day1: sim
+	nasm $(TESTDIR)/part1/listing_0037_single_register_mov.asm -o $(BUILDDIR)/$@
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	cp $(TESTDIR)/part1/listing_0037_single_register_mov.asm $(BUILDDIR)/$@.asm
+	sed -i '/;/d' $(BUILDDIR)/$@.asm
+	diff -w -i -Bb -qs --color=auto $(BUILDDIR)/$@.asm $(BUILDDIR)/$@_ds.asm
+
+clean: 
+	rm -r build/*

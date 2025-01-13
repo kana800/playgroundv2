@@ -1,0 +1,3 @@
+[submodule "pap/computer_enhance"]
+	path = pap/computer_enhance
+	url = https://github.com/cmuratori/computer_enhance.git
