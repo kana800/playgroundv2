@@ -15,5 +15,5 @@ day$1: $1.c
 	\$(CC) -g $^ -o \$@.o
 """ >> Makefile
 else
-	echo "usage: bash generate_file.sh <filename>"
+	echo "usage: bash generate_file.sh <problem#>"
 fi
