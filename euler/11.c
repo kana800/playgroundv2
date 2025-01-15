@@ -27,85 +27,106 @@ int main(int argc, char **argv)
 	1,70, 54, 71, 83, 51, 54, 69, 16, 92, 33, 48, 61, 43, 52, 1, 89, 19, 67, 48
 	};
 
-	long int max = 0;
-	long int mult = 0;
-	long int v = 0, x = 0;
+	// this is much easier if you do it in a two dimensional array
+	// this is broken; i will fix it later <3
 
-	for (int i = 0; i < sizeof(input)/sizeof(int); i++)
+	long int max_left = 0, max_right = 0, max_up = 0, max_down = 0, max_diag_l = 0, max_diag_r = 0;
+	long int mult_left = 0, mult_right = 0, mult_up = 0, mult_down = 0, mult_diag_l , mult_diag_r = 0;
+	int idx = 0, row = 1;
+	int count = 0;
+	for (int i = 0; i < 400; i++,count++)
 	{
-		mult = input[i];
-//		printf("%d ", input[i]);
-		for (int j = i + 1; j < i + 4; j++)
+		printf("%d\n",row);
+		mult_left = input[i];
+		printf("left\t%d ", mult_left);
+		for (int l = i + 1; l <= (i + 3); l++)
 		{
-//			printf("%d ", input[j]);
-			mult *= input[j];
+			if (l < (row * 20)){
+				printf("%d ", input[l]);
+				mult_left *= input[l];
+			}
 		}
-//		printf("= %ld\n",mult);
-		if (mult > max) max = mult;
-		mult = 0;
-	}
-	printf("-> %ld\n", max);
+		if (mult_left > max_left) max_left = mult_left;
+
+		printf("\n");
+		mult_right = input[i];
+		printf("right\t%d ", mult_right);
+		for (int r = i - 1; r >= i - 3 ; r--)
+		{
+			// 70 (380)1 (379)54 (378)50
+			// i -> 99  ; r = 98; row = 4 
+			// 4*20 ( 80 ) > 98 > 3 * 20 (60)
+			// 5*20 ( 100) > 98 > 8:0 
+			// 400; r = 389
+			printf("(%d)",r);
+			if ((row * 20) - (17)< r < (row  * 20))
+			{
+				printf("%d ",input[r]);
+				mult_right *= input[r];
+			}
+		}
+		if (mult_right > max_right) max_right = mult_right;
+
+		printf("\n");
+		
+		mult_down = input[i];
+		printf("down\t%d ", mult_down);
+		for (int d = i + 20; d <= (i + (19 * 4)); d += 20) 
+		{
+			if (d >= 399) break;
+			printf("%d ", input[d]);
+			mult_down *= input[d];
+		}
+		if (mult_down > max_down ) max_down = mult_down;
+		printf("\n");
 	
-	max = 0;	
-	mult = 1;
-	for (int i = 399; i >= 0; i--)
-	{
-		for (int j = i; j >= i - 3; j--)
+		mult_up = input[i];
+		printf("up\t%d ", mult_up);
+		for (int u = i - 20; u >= (i - (19 * 4)); u -= 20)
 		{
-//			printf("(%d %d) %d ",i, j, input[j]);
-			mult *= input[j];
+			if (u < 0) break;
+			printf("%d ", input[u]);
+			mult_down *= input[u];
 		}
-//		printf("= %ld\n",mult);
-		if (mult > max) max = mult;
-		mult = 1;
-	}
-	printf("<- %ld\n", max);
+		if (mult_up > max_up ) max_up = mult_up;
 
-	max = 0;	
-	mult = 1;
-	for (int i = 0; i < 400; i++)
-	{
-		mult = input[i];
-//		printf("%d ", input[i]);
-		for (int j = i + 20; j < i + 80; j += 20)
+		printf("\n");
+		mult_diag_r = input[i];
+		printf("\\ diag\t%d ", mult_diag_r);
+		int lc = 1;
+		for (int dr = i + 20; dr <= (i + (19 * 4)); dr += 20) 
 		{
-			if (j > 399) break;
-			printf("%d ", input[j]);
-			mult *= input[j];
+			if (i > (16 * row) ) break;
+			printf("%d ", input[dr + lc]);
+			mult_diag_r *= input[dr];
+			lc++;
 		}
-//		printf("= %ld\n",mult);
-		if (mult > max) max = mult;
-		mult = 1;
-	}
-	printf("v %ld\n", max);
-	max = 0;
-	int c = 0;
-	mult = 1;
-	for (int i = 0; i < 400; i++)
-	{
-		//mult = input[i];
-		//printf("%d ", input[i]);
-		// i = 0; j = 21 
-		//	j = 21 + ( 20 + 1 ) = 43
-		//	j = 43 + ( 20 + 2 ) = 84
-		for (int j = i; j < i + 80; j +=  20  )
-		{
-			if ( j + c > 399 ) break;
-//			printf("(%d)(%d)(%d)%d ", c, 20+c,j,input[j+c]);
-			mult *= input[j + c];
-			c += 1;
-			if (c == 2) {
-				c == 1;
-			} 
-		}
-		c = 0;
-//		printf("= %ld\n",mult);
-		if (mult > max) max = mult;
-		mult = 1;
-	}
-	printf("\\ %ld\n", max);
+		if (mult_diag_r > max_diag_r) max_diag_r = mult_diag_r;
+		printf("\n");
+
+//		printf("\n");
+//		printf("/ diag\t%d ", idx);
+//		int lc = 1;
+//		for (int dr = i + 20; dr <= (i + (19 * 4)); dr += 20) 
+//		{
+//			if (i > (16 * row) ) break;
+//			printf("%d ", input[dr + lc]);
+//			lc++;
+//		}
+//		printf("\n");
 
 
+		if ((i + 1) % 20 == 0) row++;
+
+		mult_left = 0;
+		mult_right = 0;
+		mult_up = 0;
+		mult_down = 0;
+		mult_diag_r = 0;
+	}
+
+
+	printf("-> %ld\n <- %ld\n up %ld \n down %ld \n diag %ld \n", max_left, max_right, max_up, max_down, max_diag_r);
 
 
 
