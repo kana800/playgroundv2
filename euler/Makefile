@@ -37,3 +37,7 @@ day10: 10.c primes.h
 day11: 11.c
 	$(CC) -g $^ -o $@.o
 
+
+day12: 12.c
+	$(CC) -g -lm $^ -o $@.o
+
