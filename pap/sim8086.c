@@ -17,6 +17,7 @@
  *   -> word ( W=1 ) the whole world is being transferred
  */
 
+
 #define DEBUG 1 
 
 // REG_TABLE[w][idx]
@@ -85,15 +86,19 @@ void printInstruction(opcode op)
     switch (op.idx)
     {
         case 2: // immediate to register
+            // 16 bit
             if (op.w == 1) 
             {
+                int16_t temp = op.data[1] << 8 | op.data[0]; 
                 printf("mov %s,%d\n", 
                        REG_TABLE[op.reg][op.w],
-                       (int)(op.data[0]) + (int)(op.data[1]));
-            } else {
+                       temp);
+            } 
+            else 
+            { 
+                int8_t temp = op.data[0];
                 printf("mov %s,%d\n", 
-                       REG_TABLE[op.reg][op.w],
-                       (int)((~op.data[0]) + 1));
+                       REG_TABLE[op.reg][op.w],temp );
             }
             break;
         case 0:
