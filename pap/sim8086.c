@@ -17,7 +17,7 @@
  *   -> word ( W=1 ) the whole world is being transferred
  */
 
-#define DEBUG 0 
+#define DEBUG 1 
 
 // REG_TABLE[w][idx]
 char* REG_TABLE[8][2] = {
@@ -64,6 +64,13 @@ typedef struct __opcode__ {
     int mod;
     int reg;
     int rm;
+
+    unsigned char disp_lo;
+    unsigned char disp_hi;
+    unsigned char addr_lo;
+    unsigned char addr_hi;
+    unsigned char data[2];
+
     int bytesread; //debug
 } opcode; 
 
@@ -75,20 +82,25 @@ void printInstruction(opcode op)
 //           op.mod, op.d, op.w, op.reg, op.rm);
 #endif
 
-    switch (op.mod)
+    switch (op.idx)
     {
-        case 0:
-            // immediate to register
-            if (op.reg == 6)
+        case 2: // immediate to register
+            if (op.w == 1) 
             {
-
+                printf("mov %s,%d\n", 
+                       REG_TABLE[op.reg][op.w],
+                       (int)(op.data[0]) + (int)(op.data[1]));
             } else {
-                printf("mov %s,%s",RM_TABLE[0][op.rm],RM_TABLE[op.reg][op.w]);
+                printf("mov %s,%d\n", 
+                       REG_TABLE[op.reg][op.w],
+                       (int)((~op.data[0]) + 1));
             }
             break;
-        case 3:
+        case 0:
             // register to register instruction
-            printf("mov %s,%s\n",REG_TABLE[op.rm][op.w],REG_TABLE[op.reg][op.w]);
+            printf("mov %s,%s\n",
+                   REG_TABLE[op.rm][op.w],
+                   REG_TABLE[op.reg][op.w]);
             break;
     }
 }
@@ -102,84 +114,46 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
     unsigned char dw;
 
 
-    unsigned char opcode_b = buffer[bytesread] >> 2; 
-    switch (opcode_b)
+    unsigned char opcode_a = buffer[bytesread] >> 2; 
+    switch (opcode_a)
     {
         case 0x22: // mov register/memory to/from register
             oc.idx = 0;
-            break;
-        case 0x2c: // mov immediate to register
-            oc.idx = 1;
-            break;
-        default:
-            oc.idx = -1;
+            oc.d = buffer[bytesread] & 0b00000010;
+            oc.w = buffer[bytesread] & 0b00000001;
+            // second byte
+            oc.mod = buffer[bytesread + 1] >> 6; 
+            oc.reg = (buffer[bytesread + 1] & 0b00111000) >> 3;
+            oc.rm = (buffer[bytesread + 1] & 0b00000111);
+            // successfully read two bytes
+            oc.bytesread = 2;
             break;
     }
 
+    unsigned char opcode_b = buffer[bytesread] >> 3;
+    switch (opcode_b)
+    {
+        case 0x16: // mov immediate to register
+            oc.idx = 2;
+            oc.reg = (buffer[bytesread] & 0b00000111);
+            oc.d = -1;
+            oc.w = 0;
+            // second byte [data]
+            oc.data[0] = buffer[bytesread + 1];
+            oc.bytesread = 2;
+            break;
+        case 0x17:
+            oc.idx = 2;
+            oc.reg = (buffer[bytesread] & 0b00000111);
+            oc.d = -1;
+            oc.w = 1;
+            // second byte [data]
+            oc.data[0] = buffer[bytesread + 1];
+            oc.data[1] = buffer[bytesread + 2];
+            oc.bytesread = 3;
+            break;
+    }
     assert(oc.idx != -1);
-
-    if (oc.idx == 1)
-    {
-        reg = (buffer[bytesread] & 0b00000111);
-        dw = (buffer[bytesread] &  0b00010000) >> 5;
-    }
-
-    // not valid opcode
-    // bytesread will sent to default
-    // if (oc.idx == -1) return oc;
-    dw = buffer[bytesread] << 6;
-    switch (dw)
-    {
-        case 0b00000000:
-            oc.d = 0;
-            oc.w = 0;
-            break;
-        case 0b01000000:
-            oc.d = 0;
-            oc.w = 1;
-            break;
-        case 0b10000000:
-            oc.d = 1;
-            oc.w = 0;
-            break;
-        case 0b11000000:
-            oc.d = 1;
-            oc.w = 1;
-            break;
-    }
-
-    assert(oc.d != -1);
-    assert(oc.w != -1);
-
-    // READING 2ND BYTE
-    unsigned char mod = buffer[bytesread + 1] >> 6;
-    oc.reg = (buffer[bytesread + 1] & 0b00111000) >> 3;
-    oc.rm = (buffer[bytesread + 1] & 0b00000111);
-
-    switch (mod)
-    {
-        case 0b00:
-            oc.mod = 0;
-            break;
-        case 0b01:
-            oc.mod = 1;
-            break;
-        case 0b10:
-            oc.mod = 2;
-            break;
-        case 0b11:
-            oc.mod = 3;
-            break;
-    }
-
-    assert(oc.mod != -1);
-    assert(oc.reg != -1);
-    assert(oc.rm != -1);
-
-    // successfully read two bytes
-    oc.bytesread += 2;
-
-
     return oc;
 }
 
