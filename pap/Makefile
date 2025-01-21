@@ -28,9 +28,30 @@ listing038_t: sim
 	sed -i '/;/d' $(BUILDDIR)/$@.asm
 	diff $(BUILDDIR)/$@.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
 
-test: sim
+listing039_t: sim
+	nasm $(TESTDIR)/part1/listing_0039_more_movs.asm -o $(BUILDDIR)/$@
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	cp $(TESTDIR)/part1/listing_0039_more_movs.asm $(BUILDDIR)/$@.asm
+	sed -i '/;/d' $(BUILDDIR)/$@.asm
+	diff $(BUILDDIR)/$@.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
+
+test_imm_to_reg: sim
 	nasm $(TEST2DIR)/immediate_to_register.asm -o $(BUILDDIR)/imm_to_test
-	$(BUILDDIR)/$^.out $(BUILDDIR)/imm_to_test
+	$(BUILDDIR)/$^.out $(BUILDDIR)/imm_to_test > $(BUILDDIR)/$@_ds.asm
+	cp $(TEST2DIR)/immediate_to_register.asm $(BUILDDIR)/
+	diff $(BUILDDIR)/immediate_to_register.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
+
+test_bit_disp: sim
+	nasm $(TEST2DIR)/bit_displacement.asm -o $(BUILDDIR)/bit_disp
+#	$(BUILDDIR)/$^.out $(BUILDDIR)/bit_disp > $(BUILDDIR)/$@_ds.asm
+	$(BUILDDIR)/$^.out $(BUILDDIR)/bit_disp
+	cp $(TEST2DIR)/bit_displacement.asm $(BUILDDIR)/
+	diff $(BUILDDIR)/bit_displacement.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
+
+
+
+
 
 clean: 
 	rm -r build/*

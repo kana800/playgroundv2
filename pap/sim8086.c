@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <stdint.h>
 
 /* 8086 instruction size is 1 to 6 bytes 
  * The first 6 bits determines the OpCode (operation code)
@@ -45,10 +46,10 @@ char* RM_TABLE[2][8] = {
         "bx"
     },
     {
-        "[bx + si]", 
-        "[bx + di]", 
-        "[bp + si]", 
-        "[bp + di]",
+        "[bx + si", 
+        "[bx + di", 
+        "[bp + si", 
+        "[bp + di",
         "si", 
         "di", 
         "bp", 
@@ -66,11 +67,14 @@ typedef struct __opcode__ {
     int reg;
     int rm;
 
-    unsigned char disp_lo;
-    unsigned char disp_hi;
+//    unsigned char disp_lo[2];
+//    unsigned char disp_hi[2];
+    uint16_t u_disp;
+
     unsigned char addr_lo;
     unsigned char addr_hi;
-    unsigned char data[2];
+
+    int16_t data;
 
     int bytesread; //debug
 } opcode; 
@@ -89,23 +93,40 @@ void printInstruction(opcode op)
             // 16 bit
             if (op.w == 1) 
             {
-                int16_t temp = op.data[1] << 8 | op.data[0]; 
                 printf("mov %s,%d\n", 
                        REG_TABLE[op.reg][op.w],
-                       temp);
+                       op.data);
             } 
             else 
             { 
-                int8_t temp = op.data[0];
                 printf("mov %s,%d\n", 
-                       REG_TABLE[op.reg][op.w],temp );
+                       REG_TABLE[op.reg][op.w],
+                       op.data);
             }
             break;
         case 0:
             // register to register instruction
-            printf("mov %s,%s\n",
-                   REG_TABLE[op.rm][op.w],
-                   REG_TABLE[op.reg][op.w]);
+            switch (op.mod)
+            {
+                case 0:
+                    printf("mov %s,%s\n",
+                           REG_TABLE[op.rm][op.w],
+                           RM_TABLE[0][op.rm]);
+                    break;
+                case 1:
+                case 2:
+                    printf("mov %s, %s + %d ]\n",
+                           REG_TABLE[op.reg][op.w],
+                            RM_TABLE[1][op.rm],
+                           op.u_disp
+                           );
+                    break;
+                case 3:
+                    printf("mov %s,%s\n",
+                           REG_TABLE[op.rm][op.w],
+                           REG_TABLE[op.reg][op.w]);
+                    break;
+            } 
             break;
     }
 }
@@ -130,8 +151,22 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.mod = buffer[bytesread + 1] >> 6; 
             oc.reg = (buffer[bytesread + 1] & 0b00111000) >> 3;
             oc.rm = (buffer[bytesread + 1] & 0b00000111);
-            // successfully read two bytes
+            // checking if optional bytes are needed to
+            // be read (disp lo) (disp hi); 
+            // mod == 01 +D8
+            // mod == 10 +D16
             oc.bytesread = 2;
+            if (oc.mod == 1)
+            {
+                uint8_t temp = buffer[bytesread + 2];
+                oc.u_disp = temp;
+                oc.bytesread = 3;
+            } 
+            else if (oc.mod == 2)
+            {
+                oc.u_disp = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                oc.bytesread = 4;
+            }
             break;
     }
 
@@ -144,7 +179,9 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.d = -1;
             oc.w = 0;
             // second byte [data]
-            oc.data[0] = buffer[bytesread + 1];
+            int8_t temp = buffer[bytesread + 1];
+//            oc.data = 0xFF << 8 | buffer[bytesread + 1];
+            oc.data = temp;
             oc.bytesread = 2;
             break;
         case 0x17:
@@ -152,9 +189,10 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.reg = (buffer[bytesread] & 0b00000111);
             oc.d = -1;
             oc.w = 1;
+            oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
             // second byte [data]
-            oc.data[0] = buffer[bytesread + 1];
-            oc.data[1] = buffer[bytesread + 2];
+            // oc.data[0] = buffer[bytesread + 1];
+            // oc.data[1] = buffer[bytesread + 2];
             oc.bytesread = 3;
             break;
     }
