@@ -45,15 +45,16 @@ char* RM_TABLE[2][8] = {
         "", 
         "bx"
     },
-    {
+    { // lmao i will do the closing bracket
+      // in the printf function. 
         "[bx + si", 
         "[bx + di", 
         "[bp + si", 
         "[bp + di",
-        "si", 
-        "di", 
-        "bp", 
-        "bx"
+        "[si", 
+        "[di", 
+        "[bp", 
+        "[bx"
     }
 };
 
@@ -87,39 +88,52 @@ void printInstruction(opcode op)
 //           op.mod, op.d, op.w, op.reg, op.rm);
 #endif
 
+
+    // d = 1 instruction destination is specified
+    // in reg field
+    // d = 0 instruction source is specified in 
+    // reg field
+    // mov <dest> <source>
+
     switch (op.idx)
     {
         case 2: // immediate to register
-            // 16 bit
-            if (op.w == 1) 
-            {
-                printf("mov %s,%d\n", 
-                       REG_TABLE[op.reg][op.w],
-                       op.data);
-            } 
-            else 
-            { 
-                printf("mov %s,%d\n", 
-                       REG_TABLE[op.reg][op.w],
-                       op.data);
-            }
+            printf("mov %s,%d\n", 
+                   REG_TABLE[op.reg][op.w],
+                   op.data);
             break;
         case 0:
             // register to register instruction
             switch (op.mod)
             {
                 case 0:
-                    printf("mov %s,%s\n",
-                           REG_TABLE[op.rm][op.w],
-                           RM_TABLE[0][op.rm]);
+                    if (op.d == 0)
+                    {
+                        printf("mov %s,%s\n",
+                               RM_TABLE[0][op.rm],
+                               REG_TABLE[op.rm][op.w]);
+                    } else {
+                        printf("mov %s,%s\n",
+                               REG_TABLE[op.rm][op.w],
+                               RM_TABLE[0][op.rm]);
+                    }
                     break;
                 case 1:
                 case 2:
-                    printf("mov %s, %s + %d ]\n",
-                           REG_TABLE[op.reg][op.w],
-                            RM_TABLE[1][op.rm],
-                           op.u_disp
-                           );
+                    if (op.d == 0)
+                    {
+                        printf("mov %s], %s + %d \n",
+                               RM_TABLE[1][op.rm],
+                               REG_TABLE[op.reg][op.w],
+                               op.u_disp
+                               );
+                    } else {
+                        printf("mov %s, %s + %d ]\n",
+                               REG_TABLE[op.reg][op.w],
+                               RM_TABLE[1][op.rm],
+                               op.u_disp
+                               );
+                    }
                     break;
                 case 3:
                     printf("mov %s,%s\n",
