@@ -18,7 +18,6 @@
  *   -> word ( W=1 ) the whole world is being transferred
  */
 
-
 #define DEBUG 1 
 
 // REG_TABLE[w][idx]
@@ -70,7 +69,7 @@ typedef struct __opcode__ {
 
 //    unsigned char disp_lo[2];
 //    unsigned char disp_hi[2];
-    uint16_t u_disp;
+    int16_t u_disp;
 
     unsigned char addr_lo;
     unsigned char addr_hi;
@@ -122,13 +121,13 @@ void printInstruction(opcode op)
                 case 2:
                     if (op.d == 0)
                     {
-                        printf("mov %s], %s + %d \n",
+                        printf("mov %s %d], %s \n",
                                RM_TABLE[1][op.rm],
-                               REG_TABLE[op.reg][op.w],
-                               op.u_disp
+                               op.u_disp,
+                               REG_TABLE[op.reg][op.w]
                                );
                     } else {
-                        printf("mov %s, %s + %d ]\n",
+                        printf("mov %s, %s %d]\n",
                                REG_TABLE[op.reg][op.w],
                                RM_TABLE[1][op.rm],
                                op.u_disp
@@ -172,7 +171,10 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.bytesread = 2;
             if (oc.mod == 1)
             {
-                uint8_t temp = buffer[bytesread + 2];
+                int16_t temp = buffer[bytesread + 2] & 0b0000000011111111;
+                if (buffer[bytesread + 2] & 0b0000000010000000) 
+                    temp = temp | 0b1111111100000000;
+                // sign bit extension
                 oc.u_disp = temp;
                 oc.bytesread = 3;
             } 
@@ -184,8 +186,23 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             break;
     }
 
-    unsigned char opcode_b = buffer[bytesread] >> 3;
+    // immediate to register/memory
+    unsigned char opcode_b = buffer[bytesread] >> 1;
     switch (opcode_b)
+    {
+        case 0x63: 
+            oc.idx = 2;
+            oc.w = buffer[bytesread] & 0b00000001;
+            // second byte [data]
+            oc.mod = buffer[bytesread + 1] >> 6; 
+            oc.reg = 0;
+            oc.rm = buffer[bytesread + 1] & 0b00000111;
+            oc.bytesread = 2;
+            break;
+    }
+
+    unsigned char opcode_c = buffer[bytesread] >> 3;
+    switch (opcode_c)
     {
         case 0x16: // mov immediate to register
             oc.idx = 2;
