@@ -41,3 +41,5 @@ day11: 11.c
 day12: 12.c
 	$(CC) -g -lm $^ -o $@.o
 
+day16: 16.c
+	$(CC) -g -lm $^ -o $@.o
