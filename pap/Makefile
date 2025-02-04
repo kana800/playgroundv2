@@ -61,6 +61,11 @@ test_exp_size: sim
 	nasm $(TEST2DIR)/explicit_sizes.asm -o $(BUILDDIR)/exp_size
 	$(BUILDDIR)/$^.out $(BUILDDIR)/exp_size > $(BUILDDIR)/$@_ds.asm
 
+test_direct_addr: sim
+	nasm $(TEST2DIR)/direct_address.asm -o $(BUILDDIR)/direct_addr
+	$(BUILDDIR)/$^.out $(BUILDDIR)/direct_addr > $(BUILDDIR)/$@_ds.asm
+
+
 
 clean: 
 	rm -r build/*
