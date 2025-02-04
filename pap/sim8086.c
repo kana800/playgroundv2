@@ -100,16 +100,25 @@ void printInstruction(opcode op)
             // register to register instruction
             switch (op.mod)
             {
-                case 0:
+                case 0: // memory mode no displacement
                     if (op.d == 0)
                     {
                         printf("mov %s,%s\n",
                                RM_TABLE[0][op.rm],
                                REG_TABLE[op.rm][op.w]);
                     } else {
-                        printf("mov %s,%s\n",
-                               REG_TABLE[op.rm][op.w],
-                               RM_TABLE[0][op.rm]);
+                        // special case checking if 
+                        // direct addressing
+                        if (op.rm == 6)
+                        {
+                            printf("mov %s,[%d]\n",
+                                   REG_TABLE[op.reg][op.w],
+                                   op.data);
+                        } else {
+                            printf("mov %s,%s\n",
+                                   REG_TABLE[op.rm][op.w],
+                                   RM_TABLE[0][op.rm]);
+                        }
                     }
                     break;
                 case 1:
@@ -158,6 +167,16 @@ void printInstruction(opcode op)
                    REG_TABLE[op.reg][op.w],
                    op.data);
             break;
+        case 4: // memory to accumulator 
+            printf("mov %s,[%d]\n",
+                   REG_TABLE[0][op.w],
+                   op.data);
+            break;
+        case 5: // accumulator to memory
+            printf("mov [%d],%s\n",
+                   op.data,
+                   REG_TABLE[0][op.w]);
+            break;
     }
 }
 
@@ -193,8 +212,11 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             // mod == 01 +D8
             // mod == 10 +D16
             oc.bytesread = 2;
-            if (oc.mod == 0) // memory mode no displacement
+            if ((oc.mod == 0) && (oc.rm == 6)) // memory mode no displacement
             {
+                int16_t temp = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                oc.data = temp;
+                oc.bytesread = 4;
             }
             else if (oc.mod == 1) // memory mode 8 bit displacement
             {
@@ -229,8 +251,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             switch (oc.mod)
             {
                 case 0: // no displacement
-                    int8_t temp1 = buffer[bytesread + 2];
-                    oc.data = temp1;
+                    oc.data = (int8_t) buffer[bytesread + 2];
                     oc.bytesread = 3;
                     break;
                 case 2: // 16 bit displacement
@@ -251,9 +272,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.reg = (buffer[bytesread] & 0b00000111);
             oc.d = -1;
             oc.w = 0;
-            // second byte [data]
-            int8_t temp = buffer[bytesread + 1];
-            oc.data = temp;
+            oc.data = (int8_t)buffer[bytesread + 1];
             oc.bytesread = 2;
             break;
         case 0x17:
@@ -265,6 +284,45 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.bytesread = 3;
             break;
     }
+
+    // mov memory to accumlator
+    // mov accumlator to memory
+    unsigned char opcode_d = buffer[bytesread];
+    switch (opcode_d)
+    {
+        case 0xA0: 
+            oc.idx = 4;
+            oc.reg = -1;
+            oc.d = -1;
+            oc.w = 0;
+            oc.data = (int8_t) buffer[bytesread + 1];
+            oc.bytesread = 2;
+            break;
+        case 0xA1:
+            oc.idx = 4;
+            oc.reg = -1;
+            oc.d = -1;
+            oc.w = 1;
+            oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
+            oc.bytesread = 3;
+            break;
+        case 0xA2:
+            oc.idx = 5;
+            oc.reg = -1;
+            oc.w = 0;
+            oc.data = (int8_t) buffer[bytesread + 1];
+            oc.bytesread = 2;
+            break;
+        case 0XA3:
+            oc.idx = 5;
+            oc.reg = -1;
+            oc.d = -1;
+            oc.w = 1;
+            oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
+            oc.bytesread = 3;
+            break;
+    }
+
     assert(oc.idx != -1);
     return oc;
 }

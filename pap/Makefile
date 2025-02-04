@@ -65,6 +65,9 @@ test_direct_addr: sim
 	nasm $(TEST2DIR)/direct_address.asm -o $(BUILDDIR)/direct_addr
 	$(BUILDDIR)/$^.out $(BUILDDIR)/direct_addr > $(BUILDDIR)/$@_ds.asm
 
+test_mem_to_acc: sim
+	nasm $(TEST2DIR)/mem_to_acc.asm -o $(BUILDDIR)/mem_to_acc
+	$(BUILDDIR)/$^.out $(BUILDDIR)/mem_to_acc > $(BUILDDIR)/$@_ds.asm
 
 
 clean: 
