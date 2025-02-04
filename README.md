@@ -11,4 +11,3 @@ This repository mainly consist of tutorials, examples and other small projects t
 | [Deep C Secrets Van Der Linden](deepc) | `reading` |`reading` `books` `c` |
 
 
-<span style="color:rgb(148,0,211)">color works</span>
