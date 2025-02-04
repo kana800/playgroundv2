@@ -1,7 +1,7 @@
 CC=gcc
 
 clean: 
-	rm -rf *.o 
+	rm -rf *.o *.out 
 	echo clean completed
 
 day1: 1.c
