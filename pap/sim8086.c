@@ -180,7 +180,15 @@ void printInstruction(opcode op)
     }
 }
 
-// int16_t getDispLoDispHi()
+// return the displacement according to the mod field
+// encoding 
+// mod 00 -> no displacement
+// mod 01 -> 8 bit displacement
+// mod 10 -> 16 bit displacement
+// mod 11 -> no displacement
+int16_t getDispLoDispHi(unsigned char buffer[], int mod, int startpos)
+{
+}
 
 opcode decodeInstruction(unsigned char buffer[], int bytesread)
 {
@@ -270,7 +278,6 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
         case 0x16: // mov immediate to register
             oc.idx = 3;
             oc.reg = (buffer[bytesread] & 0b00000111);
-            oc.d = -1;
             oc.w = 0;
             oc.data = (int8_t)buffer[bytesread + 1];
             oc.bytesread = 2;
@@ -278,7 +285,6 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
         case 0x17:
             oc.idx = 3;
             oc.reg = (buffer[bytesread] & 0b00000111);
-            oc.d = -1;
             oc.w = 1;
             oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
             oc.bytesread = 3;
@@ -321,6 +327,21 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
             oc.bytesread = 3;
             break;
+    }
+
+    // arthimetic add instruction
+    unsigned char opcode_e = buffer[bytesread] >> 6;
+    // register/memory with refister to either
+    switch (opcode_e)
+    {
+        case 0x00:
+            oc.idx = 6;
+            oc.d = buffer[bytesread] & 0b00000010;
+            oc.w = buffer[bytesread] & 0b00000001;
+            // TODO add a mod function
+            oc.mod = buffer[bytesread + 1] >> 6; 
+            oc.reg = (buffer[bytesread + 1] & 0b00111000) >> 3;
+            oc.rm = (buffer[bytesread + 1] & 0b00000111);
     }
 
     assert(oc.idx != -1);

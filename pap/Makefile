@@ -69,6 +69,8 @@ test_mem_to_acc: sim
 	nasm $(TEST2DIR)/mem_to_acc.asm -o $(BUILDDIR)/mem_to_acc
 	$(BUILDDIR)/$^.out $(BUILDDIR)/mem_to_acc > $(BUILDDIR)/$@_ds.asm
 
+test_add_reg: sim
+	nasm $(TEST2DIR)/add_reg.asm -o $(BUILDDIR)/add_reg
 
 clean: 
 	rm -r build/*
