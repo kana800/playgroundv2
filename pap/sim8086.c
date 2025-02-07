@@ -177,6 +177,28 @@ void printInstruction(opcode op)
                    op.data,
                    REG_TABLE[0][op.w]);
             break;
+        case 61: // add (mod = 00, d = 0)
+            printf("mov %s,%s\n",
+                   RM_TABLE[0][op.rm],
+                   REG_TABLE[op.rm][op.w]);
+            break;
+        case 63: // add (mod = 00, d = 1)
+            printf("add %s,%s\n",
+                   REG_TABLE[op.reg][op.w],
+                   RM_TABLE[op.mod][op.rm]);
+            break;
+        case 64: // add (mod = 01, d = 0)
+            printf("add %s,%s\n",
+                   RM_TABLE[0][op.rm],
+                   REG_TABLE[op.rm][op.w]);
+            break;
+        case 66: // add (mod = 01, d = 1)
+            printf("add %s,%s + %d]\n",
+                    REG_TABLE[op.reg][op.w],
+                    RM_TABLE[op.mod][op.rm],
+                    op.u_disp
+                   ); 
+            break;
     }
 }
 
@@ -186,7 +208,8 @@ void printInstruction(opcode op)
 // mod 01 -> 8 bit displacement
 // mod 10 -> 16 bit displacement
 // mod 11 -> no displacement
-int16_t getDispLoDispHi(unsigned char buffer[], int mod, int startpos)
+int16_t getDispLoDispHi(
+    unsigned char buffer[], int mod, int startpos)
 {
 }
 
@@ -330,11 +353,15 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
     }
 
     // arthimetic add instruction
-    unsigned char opcode_e = buffer[bytesread] >> 6;
-    // register/memory with refister to either
+    // NOTE: immediate to register/memory in 
+    // addition and substraction both start
+    // with 0b1000000sw and reg value only
+    // changes. check opcode_d below for the
+    // implementation
+    unsigned char opcode_e = buffer[bytesread];
     switch (opcode_e)
     {
-        case 0x00:
+        case 0x00: // register/memory to register to either
             oc.idx = 6;
             oc.d = buffer[bytesread] & 0b00000010;
             oc.w = buffer[bytesread] & 0b00000001;
@@ -342,7 +369,75 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.mod = buffer[bytesread + 1] >> 6; 
             oc.reg = (buffer[bytesread + 1] & 0b00111000) >> 3;
             oc.rm = (buffer[bytesread + 1] & 0b00000111);
+            switch (oc.mod)
+            {
+                // NOTE: oc.d is one bit; its either
+                // 0 or 2; there are two options
+                // oc.idx = 61 or oc.idx = 62
+                case 0x00: // no displacement
+                    oc.idx = 61 + oc.d;
+                    oc.bytesread = 2;
+                    break;
+                case 0x01: // 8 bit displacement
+                    oc.idx = 64 + oc.d;
+                    oc.u_disp = (int8_t)buffer[bytesread + 2];
+                    oc.bytesread = 3;
+                    break;
+                case 0x10: // 16 bit displacement
+                    oc.idx = 61 + oc.d;
+                    oc.u_disp = buffer[bytesread + 3] << 8 || buffer[bytesread + 2];
+                    oc.bytesread = 3;
+                case 0x11: // register mode
+                    oc.idx = 61 + oc.d;
+            }
     }
+
+    // NOTE: 
+    // immediate to register/memory
+    // for addition, substraction and compare the
+    // opcode is 100000sw
+    // add      : reg 000
+    // add carry: reg 010
+    // sub      : reg 101
+    // sub borrw: reg 011
+    // cmp      : reg 111
+    unsigned char opcode_d = buffer[bytesread] >> 2;
+    switch (opcode_d)
+    {
+        case 0x80:
+        case 0x81:
+        case 0x82:
+        case 0x83:
+            oc.s = buffer[bytesread] & 0b00000010;
+            oc.w = buffer[bytesread] & 0b00000001;
+            oc.mod = buffer[bytesread + 1] >> 6; 
+            oc.reg = (buffer[bytesread + 1] & 0b00111000) >> 3;
+            oc.rm = (buffer[bytesread + 1] & 0b00000111);
+            oc.idx = 100 + oc.reg;
+            // addition oc.idx = 100;
+            // addition w/ carry oc.idx = 102;
+            // substraction oc.idx = 105;
+            // substraction w/ borrow oc.idx = 103;
+            // compare oc.idx = 107;
+            switch (oc.mod)
+            {
+                case 0x00: // no displacement
+                    oc.idx = 61 + oc.d;
+                    oc.bytesread = 2;
+                    break;
+                case 0x01: // 8 bit displacement
+                    oc.idx = 64 + oc.d;
+                    oc.u_disp = (int8_t)buffer[bytesread + 2];
+                    oc.bytesread = 3;
+                    break;
+                case 0x10: // 16 bit displacement
+                    oc.idx = 61 + oc.d;
+                    oc.u_disp = buffer[bytesread + 3] << 8 || buffer[bytesread + 2];
+                    oc.bytesread = 3;
+                case 0x11: // register mode
+            }
+    }
+
 
     assert(oc.idx != -1);
     return oc;
