@@ -33,7 +33,7 @@ char* REG_TABLE[8][2] = {
 };
 
 
-char* RM_TABLE[2][8] = {
+char* RM_TABLE[3][8] = {
     {
         "[bx + si]", 
         "[bx + di]", 
@@ -54,6 +54,16 @@ char* RM_TABLE[2][8] = {
         "[di", 
         "[bp", 
         "[bx"
+    },
+    { 
+        "[bx + si", 
+        "[bx + di", 
+        "[bp + si", 
+        "[bp + di",
+        "[si", 
+        "[di", 
+        "[bp", 
+        "[bx"
     }
 };
 
@@ -66,16 +76,11 @@ typedef struct __opcode__ {
     int mod;
     int reg;
     int rm;
+    int s;
 
-//    unsigned char disp_lo[2];
-//    unsigned char disp_hi[2];
     int16_t u_disp;
-
-    unsigned char addr_lo;
-    unsigned char addr_hi;
-
     int16_t data;
-
+    
     int bytesread; //debug
 } opcode; 
 
@@ -199,6 +204,27 @@ void printInstruction(opcode op)
                     op.u_disp
                    ); 
             break;
+        case 100:
+            printf("add byte %s, %d\n",
+                   RM_TABLE[op.mod][op.rm],
+                   op.data
+                   );
+            break;
+        case 102:
+            printf("add word %s + %d],%d\n",
+                   RM_TABLE[op.mod][op.rm],
+                   op.u_disp,
+                   op.data);
+            break;
+        case 103:
+            printf("add %s,%d\n",
+                    REG_TABLE[op.rm][op.w],
+                    op.data
+                   ); 
+            break;
+        case 200: // immediate to accumulator
+            printf("add ax,%d\n",
+                   op.data);
     }
 }
 
@@ -358,7 +384,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
     // with 0b1000000sw and reg value only
     // changes. check opcode_d below for the
     // implementation
-    unsigned char opcode_e = buffer[bytesread];
+    unsigned char opcode_e = buffer[bytesread] >> 2;
     switch (opcode_e)
     {
         case 0x00: // register/memory to register to either
@@ -385,8 +411,8 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
                     break;
                 case 0x10: // 16 bit displacement
                     oc.idx = 61 + oc.d;
-                    oc.u_disp = buffer[bytesread + 3] << 8 || buffer[bytesread + 2];
-                    oc.bytesread = 3;
+                    oc.u_disp = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                    oc.bytesread = 4;
                 case 0x11: // register mode
                     oc.idx = 61 + oc.d;
             }
@@ -401,19 +427,16 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
     // sub      : reg 101
     // sub borrw: reg 011
     // cmp      : reg 111
-    unsigned char opcode_d = buffer[bytesread] >> 2;
-    switch (opcode_d)
+    unsigned char opcode_f = buffer[bytesread] >> 2;
+    switch (opcode_f)
     {
-        case 0x80:
-        case 0x81:
-        case 0x82:
-        case 0x83:
+        case 0x20:
             oc.s = buffer[bytesread] & 0b00000010;
             oc.w = buffer[bytesread] & 0b00000001;
             oc.mod = buffer[bytesread + 1] >> 6; 
             oc.reg = (buffer[bytesread + 1] & 0b00111000) >> 3;
             oc.rm = (buffer[bytesread + 1] & 0b00000111);
-            oc.idx = 100 + oc.reg;
+            oc.idx = 100 + oc.reg + oc.mod;
             // addition oc.idx = 100;
             // addition w/ carry oc.idx = 102;
             // substraction oc.idx = 105;
@@ -421,23 +444,57 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             // compare oc.idx = 107;
             switch (oc.mod)
             {
-                case 0x00: // no displacement
-                    oc.idx = 61 + oc.d;
-                    oc.bytesread = 2;
-                    break;
                 case 0x01: // 8 bit displacement
-                    oc.idx = 64 + oc.d;
                     oc.u_disp = (int8_t)buffer[bytesread + 2];
                     oc.bytesread = 3;
                     break;
-                case 0x10: // 16 bit displacement
-                    oc.idx = 61 + oc.d;
-                    oc.u_disp = buffer[bytesread + 3] << 8 || buffer[bytesread + 2];
-                    oc.bytesread = 3;
-                case 0x11: // register mode
+                case 0x02: // 16 bit displacement
+                    oc.u_disp = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                    if ((oc.s == 1) && (oc.w == 1)) 
+                    { 
+                        oc.data = buffer[bytesread + 5] << 8 | buffer[bytesread + 4];
+                        oc.bytesread = 6;
+                    } else {
+                        oc.data = (int8_t)buffer[bytesread + 4];
+                        oc.bytesread = 5;
+                    }
+                    break;
+                case 0x00:
+                case 0x03: // register mode no displacement
+                    if ((oc.s == 1) && (oc.w == 1)) 
+                    { 
+                        oc.data = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                        oc.bytesread = 4;
+                    } else {
+                        oc.data = (int8_t)buffer[bytesread + 2];
+                        oc.bytesread = 3;
+                    }
+                    break;
             }
     }
-
+    
+    // add immediate to accumulator
+    // add with carry immediate to accumulator
+    // sub immediate to accumalator
+    // sub with borrow immediate to accumulator
+    unsigned char opcode_g = buffer[bytesread];
+    switch (opcode_g)
+    {
+        case 0x04:
+        case 0x05:
+            oc.idx = 200;
+            oc.w = buffer[bytesread] & 0b00000001;
+            if (oc.w == 1)
+            {
+                oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
+                oc.bytesread = 3;
+            } else 
+            {
+                oc.data = (int8_t)buffer[bytesread + 1]; 
+                oc.bytesread = 2;
+            }
+            break;
+    }
 
     assert(oc.idx != -1);
     return oc;
