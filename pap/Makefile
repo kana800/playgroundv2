@@ -6,7 +6,6 @@ TEST2DIR:=test
 sim: sim8086.c
 	$(CC) -g $^ -o $(BUILDDIR)/$@.out
 
-
 listing037_t: sim
 	nasm $(TESTDIR)/part1/listing_0037_single_register_mov.asm -o $(BUILDDIR)/$@
 	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
@@ -71,6 +70,9 @@ test_mem_to_acc: sim
 
 test_add_reg: sim
 	nasm $(TEST2DIR)/add_reg.asm -o $(BUILDDIR)/add_reg
+
+test_sub_reg: sim
+	nasm $(TEST2DIR)/sub_reg.asm -o $(BUILDDIR)/sub_reg
 
 clean: 
 	rm -r build/*

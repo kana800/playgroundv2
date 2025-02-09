@@ -183,12 +183,22 @@ void printInstruction(opcode op)
                    REG_TABLE[0][op.w]);
             break;
         case 61: // add (mod = 00, d = 0)
-            printf("mov %s,%s\n",
+            printf("add %s,%s\n",
                    RM_TABLE[0][op.rm],
                    REG_TABLE[op.rm][op.w]);
             break;
+        case 71: // add (mod = 00, d = 0)
+            printf("sub %s,%s\n",
+                   REG_TABLE[op.reg][op.w],
+                   RM_TABLE[op.rm][op.w]);
+            break;
         case 63: // add (mod = 00, d = 1)
             printf("add %s,%s\n",
+                   REG_TABLE[op.reg][op.w],
+                   RM_TABLE[op.mod][op.rm]);
+            break;
+        case 73: // sub (mod = 00, d = 1)
+            printf("sub %s,%s\n",
                    REG_TABLE[op.reg][op.w],
                    RM_TABLE[op.mod][op.rm]);
             break;
@@ -197,8 +207,21 @@ void printInstruction(opcode op)
                    RM_TABLE[0][op.rm],
                    REG_TABLE[op.rm][op.w]);
             break;
+        case 74: // sub (mod = 01, d = 0)
+            printf("sub %s + %d],%s\n",
+                   RM_TABLE[op.mod][op.rm],
+                   op.u_disp,
+                   REG_TABLE[op.rm][op.w]);
+            break;
         case 66: // add (mod = 01, d = 1)
             printf("add %s,%s + %d]\n",
+                    REG_TABLE[op.reg][op.w],
+                    RM_TABLE[op.mod][op.rm],
+                    op.u_disp
+                   ); 
+            break;
+        case 76: // add (mod = 01, d = 1)
+            printf("sub %s,%s + %d]\n",
                     REG_TABLE[op.reg][op.w],
                     RM_TABLE[op.mod][op.rm],
                     op.u_disp
@@ -222,9 +245,25 @@ void printInstruction(opcode op)
                     op.data
                    ); 
             break;
+        case 105:
+            printf("sub byte %s, %d\n",
+                   RM_TABLE[op.mod][op.rm],
+                   op.data
+                   );
+            break;
+        case 108: // immediate from register/memory
+            printf("add %s,%d\n",
+                    REG_TABLE[op.rm][op.w],
+                    op.data
+                   ); 
+            break;
         case 200: // immediate to accumulator
             printf("add ax,%d\n",
                    op.data);
+            break;
+        default:
+            printf("CANNOTDISASSEMBLE\n");
+            break;
     }
 }
 
@@ -388,7 +427,8 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
     switch (opcode_e)
     {
         case 0x00: // register/memory to register to either
-            oc.idx = 6;
+        case 0xa:
+            oc.idx = 6 + opcode_e;
             oc.d = buffer[bytesread] & 0b00000010;
             oc.w = buffer[bytesread] & 0b00000001;
             // TODO add a mod function
@@ -401,22 +441,27 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
                 // 0 or 2; there are two options
                 // oc.idx = 61 or oc.idx = 62
                 case 0x00: // no displacement
-                    oc.idx = 61 + oc.d;
+                    oc.idx = 61 + oc.d + opcode_e;
                     oc.bytesread = 2;
                     break;
                 case 0x01: // 8 bit displacement
-                    oc.idx = 64 + oc.d;
+                    oc.idx = 64 + oc.d + opcode_e;
                     oc.u_disp = (int8_t)buffer[bytesread + 2];
                     oc.bytesread = 3;
                     break;
-                case 0x10: // 16 bit displacement
-                    oc.idx = 61 + oc.d;
+                case 0x02: // 16 bit displacement
+                    oc.idx = 61 + oc.d + opcode_e;
                     oc.u_disp = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
                     oc.bytesread = 4;
-                case 0x11: // register mode
-                    oc.idx = 61 + oc.d;
+                    break;
+                case 0x03: // register mode
+                    oc.idx = 61 + oc.d + opcode_e;
+                    break;
             }
+            break;
     }
+
+
 
     // NOTE: 
     // immediate to register/memory
@@ -495,6 +540,8 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             }
             break;
     }
+
+
 
     assert(oc.idx != -1);
     return oc;
