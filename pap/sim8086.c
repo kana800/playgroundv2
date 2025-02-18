@@ -257,9 +257,31 @@ void printInstruction(opcode op)
                     op.data
                    ); 
             break;
+        case 110: // cmp register mode no displacement
+            printf("cmp %s, %d\n",
+                   REG_TABLE[op.rm][op.w],
+                   op.data
+                   );
+            break;
         case 200: // immediate to accumulator
             printf("add ax,%d\n",
                    op.data);
+            break;
+        case 301:
+            printf("cmp %s,%s\n",
+                   RM_TABLE[op.mod][op.rm],
+                   REG_TABLE[op.reg][op.w]);
+            break;
+        case 302: // register to register
+            printf("cmp %s,%s\n",
+                   REG_TABLE[op.reg][op.w],
+                   RM_TABLE[op.mod][op.rm]);
+            break;
+        case 303: // register to register
+            printf("cmp %s,%s+%d]\n", 
+                   REG_TABLE[op.reg][op.w],
+                   RM_TABLE[op.mod][op.rm],
+                   op.u_disp);
             break;
         default:
             printf("CANNOTDISASSEMBLE\n");
@@ -541,7 +563,40 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             break;
     }
 
-
+    // CMP | compare
+    unsigned char opcode_h = buffer[bytesread] >> 2;
+    switch (opcode_h)
+    {
+        // register/memory and register
+        case 0xE:
+            oc.idx = 300;
+            oc.d = buffer[bytesread] & 0b00000010;
+            oc.w = buffer[bytesread] & 0b00000001;
+            oc.mod = buffer[bytesread + 1] >> 6; 
+            oc.reg = (buffer[bytesread + 1] & 0b00111000) >> 3;
+            oc.rm = (buffer[bytesread + 1] & 0b00000111);
+            switch (oc.mod)
+            {
+                case 0x00: // no displacement
+                    oc.idx += oc.d + oc.mod;
+                    oc.bytesread = 2;
+                    break;
+                case 0x01: // 8 bit displacement
+                    oc.idx += oc.d + oc.mod;
+                    oc.u_disp = (int8_t)buffer[bytesread + 2];
+                    oc.bytesread = 3;
+                    break;
+                case 0x02: // 16 bit displacement
+                    oc.idx += oc.d + oc.mod;
+                    oc.u_disp = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                    oc.bytesread = 4;
+                    break;
+                case 0x03: // register mode
+                    oc.idx += oc.d + oc.mod;
+                    break;
+            }
+            break;
+    }
 
     assert(oc.idx != -1);
     return oc;

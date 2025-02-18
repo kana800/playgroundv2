@@ -55,8 +55,8 @@ test_neg_bit_disp: sim
 	$(BUILDDIR)/$^.out $(BUILDDIR)/neg_bit_disp > $(BUILDDIR)/$@_ds.asm
 	cp $(TEST2DIR)/neg_bit_displacement.asm $(BUILDDIR)/
 	diff $(BUILDDIR)/neg_bit_displacement.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
-
 test_exp_size: sim
+
 	nasm $(TEST2DIR)/explicit_sizes.asm -o $(BUILDDIR)/exp_size
 	$(BUILDDIR)/$^.out $(BUILDDIR)/exp_size > $(BUILDDIR)/$@_ds.asm
 
@@ -73,6 +73,11 @@ test_add_reg: sim
 
 test_sub_reg: sim
 	nasm $(TEST2DIR)/sub_reg.asm -o $(BUILDDIR)/sub_reg
+
+test_cmp_reg: sim
+	nasm $(TEST2DIR)/cmp.asm -o $(BUILDDIR)/cmp
+
+
 
 clean: 
 	rm -r build/*
