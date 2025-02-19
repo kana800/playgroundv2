@@ -251,6 +251,18 @@ void printInstruction(opcode op)
                    op.data
                    );
             break;
+        case 107:
+            if (op.mod == 2)
+            {
+                printf("cmp word %d, %d\n",
+                       op.u_disp, 
+                       op.data);
+                break;
+            }
+            printf("cmp byte %s, %d\n",
+                   RM_TABLE[op.mod][op.rm],
+                   op.data);
+            break;
         case 108: // immediate from register/memory
             printf("add %s,%d\n",
                     REG_TABLE[op.rm][op.w],
@@ -267,6 +279,11 @@ void printInstruction(opcode op)
             printf("add ax,%d\n",
                    op.data);
             break;
+        case 300:
+            printf("cmp %s,%s\n",
+                   RM_TABLE[op.mod][op.rm],
+                   REG_TABLE[op.reg][op.w]);
+            break;
         case 301:
             printf("cmp %s,%s\n",
                    RM_TABLE[op.mod][op.rm],
@@ -282,6 +299,22 @@ void printInstruction(opcode op)
                    REG_TABLE[op.reg][op.w],
                    RM_TABLE[op.mod][op.rm],
                    op.u_disp);
+            break;
+        case 313: // register mode d = 0
+            printf("cmp %s,%s\n",
+                   REG_TABLE[op.reg][op.w],
+                   REG_TABLE[op.rm][op.w]);
+            break;
+        case 314: // register mode d = 1
+            printf("cmp %s,%s\n",
+                   REG_TABLE[op.rm][op.w],
+                   REG_TABLE[op.reg][op.w]);
+            break;
+        case 320: // CMP: immediate to accumulator
+            printf("cmp ax,%d\n",op.u_disp);
+            break;
+        case 321: 
+            printf("cmp al,%d\n",op.u_disp);
             break;
         default:
             printf("CANNOTDISASSEMBLE\n");
@@ -509,6 +542,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             // substraction oc.idx = 105;
             // substraction w/ borrow oc.idx = 103;
             // compare oc.idx = 107;
+            if ((oc.rm == 6) && (oc.mod == 0)) oc.mod = 2;
             switch (oc.mod)
             {
                 case 0x01: // 8 bit displacement
@@ -577,7 +611,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.rm = (buffer[bytesread + 1] & 0b00000111);
             switch (oc.mod)
             {
-                case 0x00: // no displacement
+                case 0x00:
                     oc.idx += oc.d + oc.mod;
                     oc.bytesread = 2;
                     break;
@@ -592,9 +626,28 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
                     oc.bytesread = 4;
                     break;
                 case 0x03: // register mode
-                    oc.idx += oc.d + oc.mod;
+                    oc.idx += 10 + oc.d + oc.mod;
+                    oc.bytesread = 2;
                     break;
             }
+            break;
+    }
+
+    // CMP | compare immediate with accumulator
+    unsigned char opcode_i = buffer[bytesread];
+    switch (opcode_i)
+    {
+        case 0x3c:
+            oc.w = 0;
+            oc.idx = 320;
+            oc.u_disp = (int8_t)buffer[bytesread + 1];
+            oc.bytesread = 2;
+            break;
+        case 0x3d:
+            oc.w = 1;
+            oc.idx = 321;
+            oc.u_disp = buffer[bytesread + 2] << 8 | buffer[bytesread + 1];
+            oc.bytesread = 3;
             break;
     }
 
