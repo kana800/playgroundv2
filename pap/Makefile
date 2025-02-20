@@ -77,7 +77,8 @@ test_sub_reg: sim
 test_cmp_reg: sim
 	nasm $(TEST2DIR)/cmp.asm -o $(BUILDDIR)/cmp
 
-
+test_jmp_reg: sim
+	nasm $(TEST2DIR)/jmp.asm -o $(BUILDDIR)/jmp
 
 clean: 
 	rm -r build/*

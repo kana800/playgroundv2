@@ -651,6 +651,17 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             break;
     }
 
+    // JNZ/JNE | jump on not equal / not zero
+    unsigned char opcode_j = buffer[bytesread];
+    switch (opcode_j)
+    {
+        case 0x75: // JNZ/JNE
+            oc.idx = 401;
+            oc.data = (int8_t)buffer[bytesread + 1];
+            oc.bytesread = 2;
+            break;
+    }
+
     assert(oc.idx != -1);
     return oc;
 }
