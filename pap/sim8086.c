@@ -316,6 +316,27 @@ void printInstruction(opcode op)
         case 321: 
             printf("cmp al,%d\n",op.u_disp);
             break;
+        case 517:
+            printf("jnz %d\n", op.data);
+            break;
+        case 512:
+            printf("jo %d\n", op.data);
+            break;
+        case 526:
+            printf("jb %d\n", op.data);
+            break;
+        case 516:
+            printf("je %d\n", op.data);
+            break;
+        case 520:
+            printf("js %d\n", op.data);
+        case 521:
+            printf("jno %d\n", op.data);
+        case 522:
+            printf("jp %d\n", op.data);
+        case 524:
+            printf("jle %d\n", op.data);
+            break;
         default:
             printf("CANNOTDISASSEMBLE\n");
             break;
@@ -655,8 +676,15 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
     unsigned char opcode_j = buffer[bytesread];
     switch (opcode_j)
     {
+        case 0x70: // JO
+        case 0x7e: // JB
+        case 0x74: // JE
         case 0x75: // JNZ/JNE
-            oc.idx = 401;
+        case 0x7c: // JLE
+        case 0x7a: // JP
+        case 0x78: // JS
+        case 0x79: // JNO
+            oc.idx = 400 + buffer[bytesread];
             oc.data = (int8_t)buffer[bytesread + 1];
             oc.bytesread = 2;
             break;
