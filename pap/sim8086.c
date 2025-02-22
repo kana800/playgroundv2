@@ -69,6 +69,26 @@ char* RM_TABLE[3][8] = {
 
 char* OPCODE_TABLE[1] = {"mov"};
 
+typedef struct __generalregisters__ {
+    int8_t AH;
+    int8_t AL;
+
+    int8_t BH;
+    int8_t BL;
+
+    int8_t CH;
+    int8_t CL;
+
+    int8_t DH;
+    int8_t DL;
+
+    int16_t SP;
+    int16_t BP;
+    int16_t DI;
+    int16_t SI;
+
+} generalregister;
+
 typedef struct __opcode__ {
     int idx;
     int d;
@@ -84,6 +104,15 @@ typedef struct __opcode__ {
     int bytesread; //debug
 } opcode; 
 
+void printRegister(generalregister* gr)
+{
+    printf("AH %x AL %x\nBH %x BL %x\nCH %x CL\
+        %x\nDH %x DL %x\nSP %x\nBP %x\nDI %x\nSI %x\n",
+           gr->AH, gr->AL, gr->BH, gr->BL, 
+           gr->CH, gr->CL, gr->DH, gr->DL,
+           gr->SP, gr->BP, gr->DI, gr->SI);
+    return;
+}
 
 void printInstruction(opcode op)
 {
@@ -320,20 +349,29 @@ void printInstruction(opcode op)
             printf("jnz %d\n", op.data);
             break;
         case 512:
-            printf("jo %d\n", op.data);
+            printf("js %d\n", op.data);
             break;
         case 526:
             printf("jb %d\n", op.data);
+            break;
+        case 514:
+            printf("jbe %d\n", op.data);
             break;
         case 516:
             printf("je %d\n", op.data);
             break;
         case 520:
-            printf("js %d\n", op.data);
+            printf("jne %d\n", op.data);
+            break;
+        case 522:
+            printf("jo %d\n", op.data);
+            break;
         case 521:
             printf("jno %d\n", op.data);
-        case 522:
+            break;
+        case 518:
             printf("jp %d\n", op.data);
+            break;
         case 524:
             printf("jle %d\n", op.data);
             break;
@@ -341,17 +379,6 @@ void printInstruction(opcode op)
             printf("CANNOTDISASSEMBLE\n");
             break;
     }
-}
-
-// return the displacement according to the mod field
-// encoding 
-// mod 00 -> no displacement
-// mod 01 -> 8 bit displacement
-// mod 10 -> 16 bit displacement
-// mod 11 -> no displacement
-int16_t getDispLoDispHi(
-    unsigned char buffer[], int mod, int startpos)
-{
 }
 
 opcode decodeInstruction(unsigned char buffer[], int bytesread)
@@ -672,17 +699,19 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             break;
     }
 
-    // JNZ/JNE | jump on not equal / not zero
+    // JNZ/JNE | jump on not equal / not zro
     unsigned char opcode_j = buffer[bytesread];
     switch (opcode_j)
     {
         case 0x70: // JO
         case 0x7e: // JB
+        case 0x72: // JBE
         case 0x74: // JE
         case 0x75: // JNZ/JNE
         case 0x7c: // JLE
-        case 0x7a: // JP
-        case 0x78: // JS
+        case 0x76: // JP
+        case 0x7a: // JS
+        case 0x78: // JNE
         case 0x79: // JNO
             oc.idx = 400 + buffer[bytesread];
             oc.data = (int8_t)buffer[bytesread + 1];
@@ -697,8 +726,17 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
 
 int main(int argc, char* argv[]) 
 {
+
+    bool doSimulation = false;
+    int option;
+
+
     FILE* fptr = fopen(argv[1], "rb");
-    if (!fptr) return -1;
+
+    if (!fptr) {
+        fprintf(stdout, "usage: 'sim.out <filename>'\n");
+        return -1;
+    }
 
     // getting the file size
     fseek(fptr, 0L, SEEK_END);
@@ -728,13 +766,20 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    generalregister* gr = (generalregister*)malloc(sizeof(generalregister));
+    if (gr == NULL)
+    {
+        fprintf(stderr, 
+                "could allocate memory to the general register\n");
+        return -1;
+    }
+
+
     opcode oc;
-    // reading the first two bytes default
     int bytesread = 0;
 
     printf("bits 16\n");
 
-    // decoding the first two bytes 
     while (len > bytesread)
     {
         oc = decodeInstruction(buffer, bytesread);
