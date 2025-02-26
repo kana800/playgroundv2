@@ -58,14 +58,12 @@ test_mem: sim
 	nasm $(TEST2DIR)/mem_to_acc.asm -o $(BUILDDIR)/mem_to_acc
 	$(BUILDDIR)/$^.out $(BUILDDIR)/mem_to_acc > $(BUILDDIR)/$@_ds.asm
 
-test_re: sim
-	nasm $(TEST2DIR)/re.asm -o $(BUILDDIR)/re
-
-test_add_reg: sim
+test_arthmetic: sim
 	nasm $(TEST2DIR)/add_reg.asm -o $(BUILDDIR)/add_reg
-
-test_sub_reg: sim
 	nasm $(TEST2DIR)/sub_reg.asm -o $(BUILDDIR)/sub_reg
+	$(BUILDDIR)/$^.out $(BUILDDIR)/add_reg > $(BUILDDIR)/$@_ds.asm
+#	echo "---" >> $@_ds.asm
+#	$(BUILDDIR)/$^.out $(BUILDDIR)/sub_reg >> $(BUILDDIR)/$@_ds.asm
 
 test_cmp_reg: sim
 	nasm $(TEST2DIR)/cmp.asm -o $(BUILDDIR)/cmp
