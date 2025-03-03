@@ -56,7 +56,7 @@ char* RM_TABLE[3][8] = {
 
 char* OPCODE_TABLE[1] = {"mov"};
 
-int8_t GENERAL_REGISTERS[8][2] = {
+uint16_t GENERAL_REGISTERS[8][2] = {
     {0,0}, 
     {0,0}, 
     {0,0}, 
@@ -66,6 +66,13 @@ int8_t GENERAL_REGISTERS[8][2] = {
     {0,0}, 
     {0,0}
 };
+
+// CF : carry flag
+// PF : parity flag
+// AF : auxilary flag 
+// ZF : zero flag -> indicate if number is zero
+// SF : sign flag -> indicate if number is negative
+int FLAGS[5] = {0,0,0,0,0};
 
 typedef struct __opcode__ {
     int idx;
@@ -78,6 +85,7 @@ typedef struct __opcode__ {
 
     int16_t u_disp;
     int16_t data;
+    uint16_t u_data;
     
     int bytesread; //debug
 } opcode; 
@@ -89,16 +97,26 @@ void simulateRegister()
 //           gr->AH, gr->AL, gr->BH, gr->BL, 
 //           gr->CH, gr->CL, gr->DH, gr->DL,
 //           gr->SP, gr->BP, gr->DI, gr->SI);
-    printf("AX %x [ AH %x AL %x ]\nBX %x [ BH %x BL %x ]\
-            \nCX %x [ CH %x CL %x ]\nDX %x [ DH %x DL %x ]\
-            \nSP %x\nBP %x\nDI %x\nSI %x\n",
-        GENERAL_REGISTERS[0][1], GENERAL_REGISTERS[4][0], GENERAL_REGISTERS[0][0],
-        GENERAL_REGISTERS[3][1], GENERAL_REGISTERS[7][0], GENERAL_REGISTERS[3][0],
-        GENERAL_REGISTERS[1][1], GENERAL_REGISTERS[5][0], GENERAL_REGISTERS[1][0],
-        GENERAL_REGISTERS[2][1], GENERAL_REGISTERS[6][0], GENERAL_REGISTERS[2][0],
-        GENERAL_REGISTERS[4][1], GENERAL_REGISTERS[5][1], GENERAL_REGISTERS[7][1],
-        GENERAL_REGISTERS[6][1]);
+//    printf("AX %x [ AH %x AL %x ]\nBX %x [ BH %x BL %x ]\
+//            \nCX %x [ CH %x CL %x ]\nDX %x [ DH %x DL %x ]\
+//            \nSP %x\nBP %x\nDI %x\nSI %x\n",
+//        GENERAL_REGISTERS[0][1], GENERAL_REGISTERS[4][0], GENERAL_REGISTERS[0][0],
+//        GENERAL_REGISTERS[3][1], GENERAL_REGISTERS[7][0], GENERAL_REGISTERS[3][0],
+//        GENERAL_REGISTERS[1][1], GENERAL_REGISTERS[5][0], GENERAL_REGISTERS[1][0],
+//        GENERAL_REGISTERS[2][1], GENERAL_REGISTERS[6][0], GENERAL_REGISTERS[2][0],
+//        GENERAL_REGISTERS[4][1], GENERAL_REGISTERS[5][1], GENERAL_REGISTERS[7][1],
+//        GENERAL_REGISTERS[6][1]);
+    printf("AX %x\nBX %x\nCX %x\nDX %x\nSP %x\nBP %x\nDI %x\nSI %x\n",
+        GENERAL_REGISTERS[0][1],GENERAL_REGISTERS[3][1], GENERAL_REGISTERS[1][1], 
+        GENERAL_REGISTERS[2][1], GENERAL_REGISTERS[4][1], GENERAL_REGISTERS[5][1], 
+        GENERAL_REGISTERS[7][1], GENERAL_REGISTERS[6][1]);
     return;
+}
+
+void printFlags()
+{
+    printf("CF %d | PF %d | AF %d | ZF %d | SF %d\n", 
+           FLAGS[0], FLAGS[1], FLAGS[2], FLAGS[3], FLAGS[4]);
 }
 
 
@@ -108,7 +126,6 @@ void simulateInstruction(opcode op)
     // in reg field
     // d = 0 instruction source is specified in 
     // reg field
-    // mov <dest> <source>
     switch (op.idx)
     {
         // mov instruction set
@@ -161,13 +178,13 @@ void simulateInstruction(opcode op)
         case 11: // mov 16-bit immediate to register
             printf("mov %s,%d\n", 
                    REG_TABLE[op.reg][op.w],
-                   op.data);
+                   op.u_data);
             GENERAL_REGISTERS[op.reg][op.w] = op.data;
             break;
         case 12: // mov memory to accumulator 
             printf("mov %s,[%d]\n",
                    REG_TABLE[0][op.w],
-                   op.data);
+                   op.u_data);
             break;
         case 13: // mov memory to accumlatero
             printf("mov [%d],%s\n",
@@ -180,11 +197,15 @@ void simulateInstruction(opcode op)
             printf("add %s,%s\n",
                    RM_TABLE[0][op.rm],
                    REG_TABLE[op.rm][op.w]);
+            GENERAL_REGISTERS[0][op.rm] += 
+                GENERAL_REGISTERS[op.rm][op.w];
             break;
         case 30: // sub (mod = 00, d = 0)
             printf("sub %s,%s\n",
                    REG_TABLE[op.reg][op.w],
                    RM_TABLE[op.rm][op.w]);
+            GENERAL_REGISTERS[op.reg][op.w] -= 
+                GENERAL_REGISTERS[op.rm][op.w];
             break;
         case 22: // add (mod = 00, d = 1)
             printf("add %s,%s\n",
@@ -221,6 +242,15 @@ void simulateInstruction(opcode op)
                     op.u_disp
                    ); 
             break;
+        case 38: // sub (mod = 11, d = 0)
+            printf("sub %s,%s\n",
+                    REG_TABLE[op.rm][op.w],
+                    REG_TABLE[op.reg][op.w],
+                    op.u_disp
+                   ); 
+            GENERAL_REGISTERS[op.rm][op.w] -= 
+                GENERAL_REGISTERS[op.reg][op.w];
+            break;
         // add, sub, cmp instruction set
         // register/memory to register/either
         case 40: 
@@ -238,8 +268,9 @@ void simulateInstruction(opcode op)
         case 43:
             printf("add %s,%d\n",
                     REG_TABLE[op.rm][op.w],
-                    op.data
+                    op.u_data
                    ); 
+            GENERAL_REGISTERS[op.rm][op.w] += op.u_data;
             break;
         case 45:
             printf("sub byte %s, %d\n",
@@ -258,6 +289,13 @@ void simulateInstruction(opcode op)
             printf("cmp byte %s, %d\n",
                    RM_TABLE[op.mod][op.rm],
                    op.data);
+            break;
+        case 48:
+            printf("sub %s,%d\n",
+                    REG_TABLE[op.rm][op.w],
+                    op.u_data
+                   ); 
+            GENERAL_REGISTERS[op.rm][op.w] -= op.u_data;
             break;
    //     case 108: // immediate from register/memory
    //         printf("add %s,%d\n",
@@ -296,16 +334,16 @@ void simulateInstruction(opcode op)
    //                RM_TABLE[op.mod][op.rm],
    //                op.u_disp);
    //         break;
-   //     case 313: // register mode d = 0
-   //         printf("cmp %s,%s\n",
-   //                REG_TABLE[op.reg][op.w],
-   //                REG_TABLE[op.rm][op.w]);
-   //         break;
-   //     case 314: // register mode d = 1
-   //         printf("cmp %s,%s\n",
-   //                REG_TABLE[op.rm][op.w],
-   //                REG_TABLE[op.reg][op.w]);
-   //         break;
+        case 313: // register mode d = 0
+            printf("cmp %s,%s\n",
+                   REG_TABLE[op.reg][op.w],
+                   REG_TABLE[op.rm][op.w]);
+            break;
+        case 314: // register mode d = 1
+            printf("cmp %s,%s\n",
+                   REG_TABLE[op.rm][op.w],
+                   REG_TABLE[op.reg][op.w]);
+            break;
    //     case 320: // CMP: immediate to accumulator
    //         printf("cmp ax,%d\n",op.u_disp);
    //         break;
@@ -357,25 +395,10 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
     unsigned char reg;
     unsigned char dw;
 
-    unsigned char opcode_a = buffer[bytesread] >> 2; 
-
-    // immediate to register/memory
-    unsigned char opcode_b = buffer[bytesread] >> 1;
-
-    // mov memory to accumlator
-    // mov accumlator to memory
-    unsigned char opcode_d = buffer[bytesread];
-    // add immediate to accumulator
-    // add with carry immediate to accumulator
-    // sub immediate to accumalator
-    // sub with borrow immediate to accumulator
-    unsigned char opcode_g = buffer[bytesread];
-
-    // CMP | compare immediate with accumulator
-    unsigned char opcode_i = buffer[bytesread];
     // JNZ/JNE | jump on not equal / not zro
     unsigned char opcode_j = buffer[bytesread];
 
+    unsigned char opcode_a = buffer[bytesread] >> 2; 
     switch (opcode_a)
     {
         case 0x22: // MOV | register/memory to/from register
@@ -482,6 +505,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
                     break;
                 case 0x03: // register mode
                     oc.idx = 28 + oc.d + opcode_a;
+                    oc.bytesread = 2;
                     break;
             }
             break;
@@ -526,12 +550,12 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
                     break;
                 case 0x00:
                 case 0x03: // register mode no displacement
-                    if ((oc.s == 1) && (oc.w == 1)) 
+                    if ((oc.s == 0) && (oc.w == 1)) 
                     { 
-                        oc.data = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                        oc.u_data = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
                         oc.bytesread = 4;
                     } else {
-                        oc.data = (int8_t)buffer[bytesread + 2];
+                        oc.u_data = (uint8_t)buffer[bytesread + 2];
                         oc.bytesread = 3;
                     }
                     break;
@@ -584,11 +608,13 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.reg = (buffer[bytesread] & 0b00000111);
             oc.w = 1;
             oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
+            oc.u_data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1];
             oc.bytesread = 3;
             break;
     }
 
-    // immediate to register/memory
+    // MOV | immediate to register/memory
+    unsigned char opcode_b = buffer[bytesread] >> 1;
     switch (opcode_b)
     {
         case 0x63: 
@@ -615,8 +641,14 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             break;
     }
 
-    // mov memory to accumlator
-    // mov accumlator to memory
+    // MOV | memory to accumlator
+    // MOV | accumlator to memory
+    // ADD | immediate to accumalator
+    // ADD | with borrow immediate to accumulator
+    // SUB | immediate to accumalator
+    // SUB | with borrow immediate to accumulator
+    // CMP | compare immediate with accumulator
+    unsigned char opcode_d = buffer[bytesread];
     switch (opcode_d)
     {
         case 0xA0: // mov memory to accumlator
@@ -658,34 +690,28 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.w = buffer[bytesread] & 0b00000001;
             if (oc.w == 1)
             {
-                oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
+                oc.u_data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
                 oc.bytesread = 3;
             } else 
             {
-                oc.data = (int8_t)buffer[bytesread + 1]; 
+                oc.u_data = (uint8_t)buffer[bytesread + 1]; 
                 oc.bytesread = 2;
             }
             break;
+        // CMP | compare immediate with accumulator
+        case 0x3c:
+            oc.w = 0;
+            oc.idx = 320;
+            oc.u_disp = (int8_t)buffer[bytesread + 1];
+            oc.bytesread = 2;
+            break;
+        case 0x3d:
+            oc.w = 1;
+            oc.idx = 321;
+            oc.u_disp = buffer[bytesread + 2] << 8 | buffer[bytesread + 1];
+            oc.bytesread = 3;
+            break;
     }
-
-
-    //// CMP | compare immediate with accumulator
-    //unsigned char opcode_i = buffer[bytesread];
-    //switch (opcode_i)
-    //{
-    //    case 0x3c:
-    //        oc.w = 0;
-    //        oc.idx = 320;
-    //        oc.u_disp = (int8_t)buffer[bytesread + 1];
-    //        oc.bytesread = 2;
-    //        break;
-    //    case 0x3d:
-    //        oc.w = 1;
-    //        oc.idx = 321;
-    //        oc.u_disp = buffer[bytesread + 2] << 8 | buffer[bytesread + 1];
-    //        oc.bytesread = 3;
-    //        break;
-    //}
 
     //// JNZ/JNE | jump on not equal / not zro
     //unsigned char opcode_j = buffer[bytesread];
