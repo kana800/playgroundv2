@@ -74,6 +74,8 @@ uint16_t GENERAL_REGISTERS[8][2] = {
 // SF : sign flag -> indicate if number is negative
 int FLAGS[5] = {0,0,0,0,0};
 
+uint16_t IP_REG;
+
 typedef struct __opcode__ {
     int idx;
     int d;
@@ -117,6 +119,7 @@ void printFlags()
 {
     printf("CF %d | PF %d | AF %d | ZF %d | SF %d\n", 
            FLAGS[0], FLAGS[1], FLAGS[2], FLAGS[3], FLAGS[4]);
+    printf("IP_REG %d\n",IP_REG);
 }
 
 
@@ -350,36 +353,36 @@ void simulateInstruction(opcode op)
    //     case 321: 
    //         printf("cmp al,%d\n",op.u_disp);
    //         break;
-   //     case 517:
-   //         printf("jnz %d\n", op.data);
-   //         break;
-   //     case 512:
-   //         printf("js %d\n", op.data);
-   //         break;
-   //     case 526:
-   //         printf("jb %d\n", op.data);
-   //         break;
-   //     case 514:
-   //         printf("jbe %d\n", op.data);
-   //         break;
-   //     case 516:
-   //         printf("je %d\n", op.data);
-   //         break;
-   //     case 520:
-   //         printf("jne %d\n", op.data);
-   //         break;
-   //     case 522:
-   //         printf("jo %d\n", op.data);
-   //         break;
-   //     case 521:
-   //         printf("jno %d\n", op.data);
-   //         break;
-   //     case 518:
-   //         printf("jp %d\n", op.data);
-   //         break;
-   //     case 524:
-   //         printf("jle %d\n", op.data);
-   //         break;
+        case 517:
+            printf("jnz %d\n", op.data);
+            break;
+        case 512:
+            printf("js %d\n", op.data);
+            break;
+        case 526:
+            printf("jb %d\n", op.data);
+            break;
+        case 514:
+            printf("jbe %d\n", op.data);
+            break;
+        case 516:
+            printf("je %d\n", op.data);
+            break;
+        case 520:
+            printf("jne %d\n", op.data);
+            break;
+        case 522:
+            printf("jo %d\n", op.data);
+            break;
+        case 521:
+            printf("jno %d\n", op.data);
+            break;
+        case 518:
+            printf("jp %d\n", op.data);
+            break;
+        case 524:
+            printf("jle %d\n", op.data);
+            break;
         default:
             printf("CANNOTDISASSEMBLE\n");
             break;
@@ -648,6 +651,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
     // SUB | immediate to accumalator
     // SUB | with borrow immediate to accumulator
     // CMP | compare immediate with accumulator
+    // JNZ/JNE | jump on not equal / not zro
     unsigned char opcode_d = buffer[bytesread];
     switch (opcode_d)
     {
@@ -711,29 +715,27 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.u_disp = buffer[bytesread + 2] << 8 | buffer[bytesread + 1];
             oc.bytesread = 3;
             break;
+        // JNZ/JNE | jump on not equal / not zro
+        case 0x70: // JO
+        case 0x7e: // JB
+        case 0x72: // JBE
+        case 0x74: // JE
+        case 0x75: // JNZ/JNE
+        case 0x7c: // JLE
+        case 0x76: // JP
+        case 0x7a: // JS
+        case 0x78: // JNE
+        case 0x79: // JNO
+            oc.idx = 400 + buffer[bytesread];
+            oc.data = (int8_t)buffer[bytesread + 1];
+            oc.bytesread = 2;
+            break;
     }
 
-    //// JNZ/JNE | jump on not equal / not zro
-    //unsigned char opcode_j = buffer[bytesread];
-    //switch (opcode_j)
-    //{
-    //    case 0x70: // JO
-    //    case 0x7e: // JB
-    //    case 0x72: // JBE
-    //    case 0x74: // JE
-    //    case 0x75: // JNZ/JNE
-    //    case 0x7c: // JLE
-    //    case 0x76: // JP
-    //    case 0x7a: // JS
-    //    case 0x78: // JNE
-    //    case 0x79: // JNO
-    //        oc.idx = 400 + buffer[bytesread];
-    //        oc.data = (int8_t)buffer[bytesread + 1];
-    //        oc.bytesread = 2;
-    //        break;
-    //}
-
     assert(oc.idx != -1);
+
+    IP_REG += oc.bytesread;
+
     return oc;
 }
 

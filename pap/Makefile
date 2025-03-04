@@ -62,6 +62,21 @@ listing046_t: sim
 	sed -i '/;/d' $(BUILDDIR)/$@.asm
 	diff $(BUILDDIR)/$@.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
 
+listing048_t: sim
+	nasm $(TESTDIR)/part1/listing_0048_ip_register.asm -o $(BUILDDIR)/$@
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	cp $(TESTDIR)/part1/listing_0048_ip_register.asm $(BUILDDIR)/$@.asm
+	sed -i '/;/d' $(BUILDDIR)/$@.asm
+	diff $(BUILDDIR)/$@.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
+
+listing049_t: sim
+	nasm $(TESTDIR)/part1/listing_0049_conditional_jumps.asm -o $(BUILDDIR)/$@
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	cp $(TESTDIR)/part1/listing_0049_conditional_jumps.asm $(BUILDDIR)/$@.asm
+	sed -i '/;/d' $(BUILDDIR)/$@.asm
+	diff $(BUILDDIR)/$@.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
 
 test_mem: sim
 	nasm $(TEST2DIR)/mem_to_acc.asm -o $(BUILDDIR)/mem_to_acc
