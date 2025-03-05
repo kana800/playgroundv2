@@ -744,7 +744,6 @@ int main(int argc, char* argv[])
 {
 
     int option;
-    
     FILE* fptr = fopen(argv[1], "rb");
 
     if (!fptr) {
