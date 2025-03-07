@@ -67,6 +67,10 @@ uint16_t GENERAL_REGISTERS[8][2] = {
     {0,0}
 };
 
+// memory for the 8086
+uint16_t MEMORY[1024*1024];
+
+
 // CF : carry flag
 // PF : parity flag
 // AF : auxilary flag 
@@ -122,8 +126,7 @@ void printFlags()
     printf("IP_REG %d\n",IP_REG);
 }
 
-
-void simulateInstruction(opcode op)
+void simulateInstruction(unsigned char buffer[], opcode op)
 {
     // d = 1 instruction destination is specified
     // in reg field
@@ -383,6 +386,12 @@ void simulateInstruction(opcode op)
         case 524:
             printf("jle %d\n", op.data);
             break;
+        case 602: // MOV MEM16 IMMED16
+            printf("mov word [%d],%d", op.u_disp, op.data);
+            MEMORY[op.u_disp] = op.data;
+            break;
+        case 603: // MOV MEM16 IMMED16
+            printf("mov word %d")
         default:
             printf("CANNOTDISASSEMBLE\n");
             break;
@@ -661,6 +670,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.d = -1;
             oc.w = 0;
             oc.data = (int8_t) buffer[bytesread + 1];
+                break;
             oc.bytesread = 2;
             break;
         case 0xA1:
@@ -730,6 +740,27 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.data = (int8_t)buffer[bytesread + 1];
             oc.bytesread = 2;
             break;
+        case 0xc7: // MOV MEM16 IMMED16
+            oc.idx = 600;
+            oc.mod = buffer[bytesread + 1] >> 6; 
+            oc.rm = buffer[bytesread + 1] & 0b00000111;
+            switch (oc.mod)
+            {
+                //case 0: // no displacement
+                //    oc.data = (int8_t) buffer[bytesread + 2];
+                //    oc.bytesread = 3;
+                //    break;
+                case 3:
+                    oc.idx = 603;
+                    oc.data = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                case 2: // 16 bit displacement
+                    oc.idx = 602;
+                    oc.u_disp = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                    oc.data = buffer[bytesread + 5] << 8 | buffer[bytesread + 4];
+                    oc.bytesread = 6;
+                    break;
+            }
+            break;
     }
 
     assert(oc.idx != -1);
@@ -787,7 +818,7 @@ int main(int argc, char* argv[])
     while (len > bytesread)
     {
         oc = decodeInstruction(buffer, bytesread);
-        simulateInstruction(oc);
+        simulateInstruction(buffer, oc);
         bytesread = bytesread + oc.bytesread;
     }
 

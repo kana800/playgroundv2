@@ -78,6 +78,14 @@ listing049_t: sim
 	sed -i '/;/d' $(BUILDDIR)/$@.asm
 	diff $(BUILDDIR)/$@.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
 
+listing051_t: sim
+	nasm $(TESTDIR)/part1/listing_0051_memory_mov.asm -o $(BUILDDIR)/$@
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	$(BUILDDIR)/$^.out $(BUILDDIR)/$@ > $(BUILDDIR)/$@_ds.asm
+	cp $(TESTDIR)/part1/listing_0051_memory_mov.asm $(BUILDDIR)/$@.asm
+	sed -i '/;/d' $(BUILDDIR)/$@.asm
+	diff $(BUILDDIR)/$@.asm $(BUILDDIR)/$@_ds.asm -w -y --color=auto
+
 test_mem: sim
 	nasm $(TEST2DIR)/mem_to_acc.asm -o $(BUILDDIR)/mem_to_acc
 	$(BUILDDIR)/$^.out $(BUILDDIR)/mem_to_acc > $(BUILDDIR)/$@_ds.asm
