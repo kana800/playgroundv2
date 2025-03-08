@@ -96,6 +96,11 @@ typedef struct __opcode__ {
     int bytesread; //debug
 } opcode; 
 
+typedef struct __tuple__ {
+    int a;
+    int b;
+} tuple;
+
 void simulateRegister()
 {
 //    printf("AH %x AL %x\nBH %x BL %x\nCH %x CL\
@@ -118,6 +123,52 @@ void simulateRegister()
         GENERAL_REGISTERS[7][1], GENERAL_REGISTERS[6][1]);
     return;
 }
+
+// return GENERAL_REGISTERS array index
+tuple getRegisterIndex(int a, int b) {
+    tuple t = {.a = -1, .b = -1};
+
+    switch (b)
+    {
+        case 0:
+            t.a = 3;
+            t.b = 6;
+            break;
+        case 1:
+            t.a = 3;
+            t.b = 7;
+            break;
+        case 2:
+            t.a = 5;
+            t.b = 6;
+            break;
+        case 3:
+            t.a = 5;
+            t.b = 7;
+            break;
+        case 4:
+            t.a = 6;
+            break;
+        case 5:
+            t.a = 7;
+            break;
+        case 6:
+            if (b == 0)
+            {
+                t.a = -1;
+            } else 
+            {
+                t.a = 5;
+            }
+            break;
+        case 7:
+            t.a = 3;
+            break;
+    }
+
+    return t;
+}
+
 
 void printFlags()
 {
@@ -144,6 +195,7 @@ void simulateInstruction(unsigned char buffer[], opcode op)
             printf("mov %s,[%d]\n",
                    REG_TABLE[op.reg][op.w],
                    op.data);
+            GENERAL_REGISTERS[op.reg][op.w] = MEMORY[op.data];
             break;
         case 2: // mov no displacement d = 1
             printf("mov %s,%s\n",
@@ -386,12 +438,21 @@ void simulateInstruction(unsigned char buffer[], opcode op)
         case 524:
             printf("jle %d\n", op.data);
             break;
+        case 601: // MOV MEM16 IMMED16
+            printf("mov word %s + %d], %d\n", 
+                   RM_TABLE[op.mod][op.rm],
+                   op.u_disp,
+                   op.data);
+            tuple t = getRegisterIndex(op.mod, op.rm);
+            MEMORY[GENERAL_REGISTERS[t.a][1] + GENERAL_REGISTERS[t.b][1] + op.u_disp] = op.data;
+            break;
         case 602: // MOV MEM16 IMMED16
-            printf("mov word [%d],%d", op.u_disp, op.data);
+            printf("mov word [%d],%d\n", op.u_disp, op.data);
             MEMORY[op.u_disp] = op.data;
             break;
         case 603: // MOV MEM16 IMMED16
-            printf("mov word %d")
+            printf("mov word %d\n");
+            break;
         default:
             printf("CANNOTDISASSEMBLE\n");
             break;
@@ -753,6 +814,13 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
                 case 3:
                     oc.idx = 603;
                     oc.data = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
+                case 1:
+                    oc.idx = 601;
+                    oc.u_disp = (int8_t)buffer[bytesread + 2];
+                    oc.data = buffer[bytesread + 4] << 8 | buffer[bytesread + 3];
+                    oc.bytesread = 5;
+                    break;
+                case 0:
                 case 2: // 16 bit displacement
                     oc.idx = 602;
                     oc.u_disp = buffer[bytesread + 3] << 8 | buffer[bytesread + 2];
