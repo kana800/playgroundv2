@@ -94,6 +94,7 @@ typedef struct __opcode__ {
     uint16_t u_data;
     
     int bytesread; //debug
+    int clocks;
 } opcode; 
 
 typedef struct __tuple__ {
@@ -187,20 +188,23 @@ void simulateInstruction(unsigned char buffer[], opcode op)
     {
         // mov instruction set
         case 0: // mov no displacement
+            op.clocks = 10; 
             printf("mov %s,%s\n",
                    RM_TABLE[0][op.rm],
                    REG_TABLE[op.rm][op.w]);
             break;
         case 1: // mov direct addressing
+            op.clocks = 10; 
             printf("mov %s,[%d]\n",
                    REG_TABLE[op.reg][op.w],
                    op.data);
             GENERAL_REGISTERS[op.reg][op.w] = MEMORY[op.data];
             break;
         case 2: // mov no displacement d = 1
+            op.clocks = 10; 
             printf("mov %s,%s\n",
-                   REG_TABLE[op.rm][op.w],
-                   RM_TABLE[0][op.rm]);
+                   REG_TABLE[op.reg][op.w],
+                   RM_TABLE[op.mod][op.rm]);
             break;
         case 3: // mov 8 bit displacement
         case 4: // mov 16 bit displacement
@@ -224,6 +228,7 @@ void simulateInstruction(unsigned char buffer[], opcode op)
                    REG_TABLE[op.reg][op.w]);
             GENERAL_REGISTERS[op.rm][op.w] = 
                 GENERAL_REGISTERS[op.reg][op.w];
+            op.clocks = 2;
             break;
         case 9: // mov register mode d = 1
             printf("mov %s, %s\n", 
@@ -234,6 +239,7 @@ void simulateInstruction(unsigned char buffer[], opcode op)
             break;
         case 10: // mov 8-bit immediate to register
         case 11: // mov 16-bit immediate to register
+            op.clocks = 4;
             printf("mov %s,%d\n", 
                    REG_TABLE[op.reg][op.w],
                    op.u_data);
@@ -463,12 +469,13 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
 {
     opcode oc = {.idx=-1, .d=-1, .w=-1, 
                 .mod=-1, .reg=-1, .rm=-1, 
-                .bytesread=0 };
+                .bytesread=0, .clocks = 0};
 
     unsigned char reg;
     unsigned char dw;
 
     // JNZ/JNE | jump on not equal / not zro
+            oc.clocks = 4;
     unsigned char opcode_j = buffer[bytesread];
 
     unsigned char opcode_a = buffer[bytesread] >> 2; 
@@ -509,6 +516,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
                             buffer[bytesread + 2];
                         oc.data = temp;
                         oc.bytesread = 4;
+                        oc.clock = 4;
                     } 
                     break;
                 case 1: // memory mode 8 bit displacement
@@ -519,6 +527,12 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
                     // sign bit extension
                     oc.u_disp = temp;
                     oc.bytesread = 3;
+                    if (oc.d) 
+                    { 
+                        oc.clocks = 9 + 9;
+                    } else {
+                        oc.clocks = 8 + 9;
+                    }
                     break;
                 case 2: // memory mode 16 bit displacement
                     oc.idx = 4 + oc.d; 
@@ -675,6 +689,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.w = 0;
             oc.data = (int8_t)buffer[bytesread + 1];
             oc.bytesread = 2;
+            oc.clocks = 4;
             break;
         case 0x17: // immediate to register 16 bit
             oc.idx = 11;
@@ -683,6 +698,7 @@ opcode decodeInstruction(unsigned char buffer[], int bytesread)
             oc.data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1]; 
             oc.u_data = buffer[bytesread + 2] << 8 | buffer[bytesread + 1];
             oc.bytesread = 3;
+            oc.clocks = 4;
             break;
     }
 
@@ -880,6 +896,7 @@ int main(int argc, char* argv[])
 
     opcode oc;
     int bytesread = 0;
+    int totalcycles = 0;
 
     printf("bits 16\n");
 
@@ -888,6 +905,8 @@ int main(int argc, char* argv[])
         oc = decodeInstruction(buffer, bytesread);
         simulateInstruction(buffer, oc);
         bytesread = bytesread + oc.bytesread;
+        totalcycles = totalcycles + oc.clocks;
+        printf("\tclocks: %d | (+%d)\n",totalcycles, oc.clocks);
     }
 
     fclose(fptr);
