@@ -1,5 +1,8 @@
 CC=gcc
 
+BUILDDIR:=build
+GMP:=external/gmp-6.3.0/gmp.h
+
 clean: 
 	rm -rf *.o *.out 
 	echo clean completed
@@ -43,3 +46,8 @@ day12: 12.c
 
 day16: 16.c
 	$(CC) -g -lm $^ -o $@.o
+
+48: 48.c
+#	cp -r external/gmp-6.3.0/libgmp.la $(BUILDDIR)/
+	$(CC) -g $^ $(GMP) -L$(BUILDDIR)/ -l:libgmp.a -o $(BUILDDIR)/$@.o
+
