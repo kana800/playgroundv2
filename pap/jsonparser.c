@@ -1,44 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 
-char* dataType[] = { "KEY", "VALUE", "STRING", 
-		     "INT", "BOOL", "JSON", 
-		     "ARRAY", "NULL" };
+char* dataType[] = {"COLON_START", "COLON_END", "STRING_START", 
+		"STRING_END", "LIST_START", "LIST_END",
+		"INT_START", "INT_END","BOOL_START", 
+		"BOOL_END", "NULL" };
 
-//typedef struct __jsondata__
-//{
-//	int datatype;
-//	void* databucket;
-//} value;
-//
-//typedef struct __jsonkey__
-//{
-//	// ptr to string
-//	char* key;
-//	// ptr to json data
-//	jsonData* value;
-//} key;
 
-// jsonData* createjsonDataStructure(int datatype, )
-// {
-// 	jsonData* ptr = (jsonData*)malloc(sizeof(value));
-// 	ptr->datatype = datatype;
-// 	switch (datatype)
-// 	{
-// 		case 0: // key type
-// 		case 1: // value
-// 		case 2: // string 
-// 		case 3: // integer
-// 		case 5: 
-// 	}
-// 	return ptr;
-// }
+struct t_storage {
+	int datatype;
+	int pos;
+};
 
+struct t_storage* createContainer(int datatype, int pos)
+{
+	struct t_storage* t = malloc(sizeof(struct t_storage) * 1);
+	t->datatype = datatype;
+	t->pos = pos;
+	return t;
+}
 
 int main(int argc, char* argv[])
 {
-
 	if (argc != 2)
 	{
 		fprintf(stderr,"usage: parser <filepath.json>\n");
@@ -48,7 +33,8 @@ int main(int argc, char* argv[])
 	FILE* fptr = fopen(argv[1], "r");
 	if (!fptr) 
 	{ 
-		fprintf(stderr,"invalid filepath\nusage: parser <filepath.json>\n");
+		fprintf(stderr,
+			"invalid filepath\nusage: parser <filepath.json>\n");
 		return -1;
 	}
 
@@ -62,11 +48,53 @@ int main(int argc, char* argv[])
 	size_t bytesread = fread(buffer, sizeof(char), len, fptr);
 	if (bytesread != len)
 	{
-		fprintf(stderr,"short read of '%s': expected %d bytes\n", argv[1], len);
+		fprintf(stderr,
+			"short read of '%s': expected %d bytes\n",
+			argv[1], len);
 		return -1;
 	}
 
-	fprintf(stdout, "\n%d\n%s\n%c",len,buffer, buffer[1]);
+	struct t_storage** container = malloc(sizeof(struct t_storage*) * len);
+	int c_len = 0; // container length
+	
+	bool insideString = false;
+
+	for (int i = 0; i <= len; i++)
+	{
+		switch (buffer[i])
+		{
+			case '{':
+				container[c_len] = createContainer(0, i);
+				c_len += 1;
+				break;
+			case '}':
+				container[c_len] = createContainer(1, i);
+				c_len += 1;
+				break;
+			case '\'':
+				if (insideString == true)
+				{
+					container[c_len] = createContainer(3, i);
+					insideString = false;
+				} else {
+					container[c_len] = createContainer(2, i);
+					insideString = true;
+				}
+				c_len += 1;
+				break;
+			case ' ':
+				if (insideString == false) break;
+		}
+	}
+
+	for (int i = 0; i < c_len; i++)
+	{
+		fprintf(stdout, "%s - %d\n", 
+			dataType[container[i]->datatype],
+			container[i]->pos);
+	}
+
+	free(container);
 	return 0;
 
 }
