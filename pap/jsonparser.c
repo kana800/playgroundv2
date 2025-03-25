@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <string.h>
 
 char* dataType[] = {"COLON_START", "COLON_END", "STRING_START", 
 		"STRING_END", "LIST_START", "LIST_END",
 		"INT_START", "INT_END","BOOL_START", 
 		"BOOL_END", "NULL" };
-
 
 struct t_storage {
 	int datatype;
@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
 	int c_len = 0; // container length
 	
 	bool insideString = false;
+	char dest[100];
 
 	for (int i = 0; i <= len; i++)
 	{
@@ -87,11 +88,28 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	insideString = false;
+	int start = 0;
 	for (int i = 0; i < c_len; i++)
 	{
-		fprintf(stdout, "%s - %d\n", 
-			dataType[container[i]->datatype],
-			container[i]->pos);
+		int datatype = container[i]->datatype;
+		int pos = container[i]->pos;
+		switch(datatype)
+		{
+			case 2:
+				start = pos + 1;
+				insideString = true;
+				break;
+			case 3: // STRING_START
+				if (insideString)
+				{
+					strncpy(dest, buffer + start, pos - start);
+					dest[pos-start] = '\0';
+					printf("string (%d, %d)-> %s \n",
+							start,pos,dest);
+					insideString = false;
+				}
+		}
 	}
 
 	free(container);
