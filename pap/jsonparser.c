@@ -10,6 +10,7 @@ char* dataType[] = {"COLON_START", "COLON_END", "STRING_START",
 		"INT_START", "INT_END","BOOL_START", 
 		"BOOL_END", "SEMI_COLON", "NULL" };
 
+
 struct t_storage {
 	int datatype;
 	int pos;
@@ -18,11 +19,19 @@ struct t_storage {
 struct t_keyvalue {
 	int k_datatype;
 	int k_pos;
-	struct t_storage* key;
+	void* key;
 	int v_datatype;
 	int v_pos;
-	struct t_storage* value;
+	void* value;
 };
+
+struct t_keyvalue* createKeyValueContainer(
+	char* buffer, int keystartpos, int keyendpos)
+{
+	// keys are always string type
+//	memcpy(dest, buffer+startpos, currpos-startpos);
+//	dest[currpos-startpos] = '\0';
+}
 
 struct t_storage* createContainer(int datatype, int pos)
 {
@@ -64,10 +73,11 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	struct t_keyvalue* keyvaluearr  = malloc(sizeof(struct t_keyvalue) * 100);
+	int kv_index = 0;
+
 	struct t_storage** container = malloc(sizeof(struct t_storage*) * len);
-	struct t_keyvalue** keyvaluearr = malloc(sizeof(struct t_keyvalue*) * len);
-	
-	int c_len = 0; // container length
+	int c_index = 0;
 	
 	// records the position of the opening bracket 
 	// and the closing bracket of the json string
@@ -81,106 +91,110 @@ int main(int argc, char* argv[])
 	int co_c = 0; // colon opening bracket count
 	int cc_c = 0; // colon closing bracket count
 
+	int* string_pair_arr = malloc(sizeof(int) * len);
+	int sp_c = 0;
+
 	bool insidestring = false;
 	bool insidelist = false;
 	char dest[100];
 
+	int buffer_index = 0;
+
 	for (int i = 0; i <= len; i++)
 	{
-		switch (buffer[i])
+		char s = buffer[i];
+
+		switch (s)
 		{
 			case '{':
-				container[c_len] = createContainer(0, i);
+				container[c_index] = createContainer(0, i);
+				c_index += 1;
 				colon_opening_arr[co_c] = i;
 				co_c += 1;
-				c_len += 1;
 				break;
 			case '}':
-				container[c_len] = createContainer(1, i);
+				container[c_index] = createContainer(1, i);
+				c_index += 1;
 				colon_closing_arr[cc_c] = i;
 				cc_c += 1;
-				c_len += 1;
 				break;
 			case '\'':
-				if (insidestring == true) // STRING END
+				if (insidestring == true)
 				{
-					container[c_len] = createContainer(3, i);
+					string_pair_arr[sp_c] = i;
+					container[c_index] = createContainer(3, i);
+					sp_c += 1;
 					insidestring = false;
-				} else {		 // STRING START
-					container[c_len] = createContainer(2, i);
-					insidestring = true;
+				} else {
+					container[c_index] = createContainer(2, i);
+					insidestring = true;	
 				}
-				c_len += 1;
+				c_index += 1;
 				break;
 			case ':':
 				if (insidestring == false)
-					container[c_len] = createContainer(10, i);
-				c_len += 1;
-				break;
+				{
+					container[c_index] = createContainer(4, i);
+					c_index += 1;
+					break;
+				}
 			case '[':
-				container[c_len] = createContainer(4, i);
-				list_opening_arr[lo_c] = i;
-				lo_c += 1;
-				c_len += 1;
-				break;
+				if (insidestring == false)
+				{
+					container[c_index] = createContainer(4, i);
+					list_opening_arr[lo_c] = i;
+					c_index += 1;
+					lo_c += 1;
+					break;
+				}
 			case ']':
-				container[c_len] = createContainer(5, i);
-				list_closing_arr[lc_c] = i;
-				lc_c += 1;
-				c_len += 1;
-				break;
+				if (insidestring == false)
+				{
+					container[c_index] = createContainer(4, i);
+					list_closing_arr[lc_c] = i;
+					c_index += 1;
+					lc_c += 1;
+					break;
+				}
 			case ' ':
 				if (insidestring == false) break;
 		}
 	}
 
+	// counts of list/colon opening 
+	// brackets and closing brackets
 	assert(lc_c == lo_c);
 	assert(cc_c == co_c);
 
-	insidestring = false;
-
-	int startpos = 0;
-	int prevpos = 0;
-	
-	struct t_storage* prev_container = NULL;
-
-	for (int i = 0; i < c_len; i++)
+#if DEBUG
+	for (int i = 1, j = 0; i < cc_c; i++, j++)
 	{
-		int datatype = container[i]->datatype;
-		int currpos = container[i]->pos;
-
-		switch(datatype)
-		{
-			case 2: // STRING_START
-				startpos = currpos + 1;
-				insidestring = true;
-				break;
-			case 3: // STRING_END
-				if (insidestring == true)
-				{
-//					strncpy(dest, buffer + start, pos - start);
-					memcpy(dest, buffer+startpos, currpos-startpos);
-					dest[currpos-startpos] = '\0';
-					fprintf(stdout, "string (%d, %d)-> %s \n",
-							startpos,currpos,dest);
-					insidestring = false;
-				}
-				break;
-			case 10: // SEMI COLON':'
-//				assert(prev_container->datatype != 4);
-				if (prev_container->datatype != 3) goto datatypeerr;
-				fprintf(stdout,"%s:%s\n",
-					dataType[prev_container->datatype],
-					dataType[datatype] );
-				break;
-		}
-		prev_container = container[i];
+		int a = colon_opening_arr[i];
+		int b = colon_closing_arr[j];
+		fprintf(stdout, "(%d)%c-(%d)%c\n", a, buffer[a], b, buffer[b]);
 	}
 
+	for (int i = 0; i < lc_c; i++)
+	{
+		int a = list_opening_arr[i];
+		int b = list_closing_arr[i];
+		fprintf(stdout, "(%d)%c-(%d)%c\n", a, buffer[a], b, buffer[b]);
+	}
+#endif
 
-	free(container);
-	free(keyvaluearr);
+	for (int i = 0; i < c_index; i++)
+	{
+		int datatype = container[i]->datatype;
+		int pos  = container[i]->pos;
+
+		fprintf(stdout, "T:%s P:%d\n", dataType[datatype], pos);
+	}
+
+	free(string_pair_arr);
+	free(colon_opening_arr);
+	free(colon_closing_arr);
 	free(list_opening_arr);
+	free(list_closing_arr);
 	return 0;
 
 datatypeerr:

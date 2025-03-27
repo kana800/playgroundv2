@@ -1,0 +1,97 @@
+{
+  "user": {
+    "id": 101,
+    "name": "Jane Smith",
+    "profile": {
+      "bio": "Software Developer with a passion for AI and data science.",
+      "social_links": [
+        {
+          "platform": "LinkedIn",
+          "url": "https://www.linkedin.com/in/janesmith"
+        },
+        {
+          "platform": "Twitter",
+          "url": "https://twitter.com/janesmith"
+        }
+      ],
+      "skills": [
+        {
+          "name": "JavaScript",
+          "proficiency": "Advanced"
+        },
+        {
+          "name": "Python",
+          "proficiency": "Intermediate"
+        },
+        {
+          "name": "Machine Learning",
+          "proficiency": "Beginner"
+        }
+      ]
+    },
+    "projects": [
+      {
+        "title": "AI Chatbot",
+        "description": "A conversational AI chatbot built with Python and TensorFlow.",
+        "technologies": ["Python", "TensorFlow", "Natural Language Processing"],
+        "status": "Completed",
+        "completion_date": "2024-06-15"
+      },
+      {
+        "title": "Weather Forecast App",
+        "description": "A mobile app to forecast the weather using real-time data.",
+        "technologies": ["React Native", "OpenWeather API"],
+        "status": "In Progress",
+        "estimated_completion": "2025-01-10"
+      }
+    ],
+    "education": [
+      {
+        "degree": "BSc Computer Science",
+        "university": "XYZ University",
+        "graduation_year": 2022,
+        "gpa": 3.8
+      },
+      {
+        "degree": "MSc Data Science",
+        "university": "ABC University",
+        "graduation_year": 2024,
+        "gpa": 3.9
+      }
+    ],
+    "work_experience": [
+      {
+        "company": "TechCorp",
+        "role": "Junior Developer",
+        "start_date": "2022-08-01",
+        "end_date": "2023-12-31",
+        "responsibilities": [
+          "Developed and maintained web applications.",
+          "Collaborated with cross-functional teams to implement new features."
+        ]
+      },
+      {
+        "company": "DataX Solutions",
+        "role": "Data Scientist Intern",
+        "start_date": "2024-01-15",
+        "end_date": "2024-06-30",
+        "responsibilities": [
+          "Worked on machine learning models for data analysis.",
+          "Assisted with data preprocessing and feature engineering."
+        ]
+      }
+    ]
+  },
+  "preferences": {
+    "newsletter_subscribed": true,
+    "theme": "dark",
+    "notifications": {
+      "email": true,
+      "sms": false
+    }
+  },
+  "settings": {
+    "language": "en-US",
+    "timezone": "America/New_York"
+  }
+}

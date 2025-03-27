@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 	FILE* fptr = fopen("output.json", "w");
 	fprintf(fptr, "{\n'pair':[\n");
 	
-	for (int i = 0; i <= itr; i++)
+	for (int i = 0; i < itr; i++)
 	{
 		f64 x0 = generateXcoord(&rng);
 		f64 y0 = generateYcoord(&rng);
@@ -67,6 +67,13 @@ int main(int argc, char** argv)
 				x0,y0,x1,y1);
 	}
 
+	f64 x0 = generateXcoord(&rng);
+	f64 y0 = generateYcoord(&rng);
+	f64 x1 = generateXcoord(&rng);
+	f64 y1 = generateYcoord(&rng);
+
+	fprintf(fptr, "\t{'x0':%lf,'y0':%lf,'x1':%lf,'y1':%lf}\n",
+			x0,y0,x1,y1);
 	fprintf(fptr,"]\n}");
 	return 0;
 }
