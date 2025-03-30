@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 struct bit3
 {
@@ -16,6 +17,16 @@ struct bit6
 	int c4:1;
 	int c5:1;
 	int c6:1;
+};
+
+char* tokens[] = {
+	"AINSTRUCTION",
+	"CINSTRUCTION",
+	"LINSTRUCTION",
+	"LOOP",
+	"JUMP",
+	"NEWLINE",
+	"COMMENT"
 };
 
 // null | the value is not stored
@@ -128,16 +139,108 @@ int getJumpIndex(char* d)
 	{
 		if (strcmp(jump_table[i], d) == 0)
 		{
-			fprintf(stdout, "%s == %s\n", d, jump_table[i]);
 			break;
 		}
 	}
 	return i;
 }
 
+void createAInstruction(char buffer[], int instructiontype,
+		       int startingpoint, int commentindex)
+{
+	// sanitize the lines ie remove comments
+	// disassemble a instruction
+	char dest[100];
+	int len = commentindex - 1;
+	memcpy(dest, &buffer[startingpoint], commentindex);
+	dest[len] = '\0';
+	fprintf(stdout, "(CI)\tsantized->%s\n", dest);
+	switch (instructiontype)
+	{
+		case 0:
+			break;
+	}
+	return;
+}
+
 int main(int argc, char* argv[])
 {
+	if (argc != 2)
+	{
+		fprintf(stderr, "usage: assembler.out <filename.asm>\n");
+		return -1;
+	}
+
+	FILE* fptr = fopen(argv[1], "r");
+	
+
+	if (!fptr)
+	{
+		fprintf(stderr, "error reading the file '%s'\n",argv[1]);
+		return -1;
+	}
+
+	fseek(fptr, 0L, SEEK_END);
+	int fsize = ftell(fptr);
+	unsigned char* symboltable = 
+		malloc(sizeof(unsigned char) * fsize);
+	fseek(fptr, 0L, SEEK_SET);
+
+	const unsigned int len = 256;
+	int linenumber = 0;
+	char buffer[len];
+	
+	int instructiontype = 0;
+	int instructionindex = -1;
+	int commentindex = -1;
+
+	while (fgets(buffer, len, fptr))
+	{
+		int i; // bufferindex
+		for (i = 0; i < len; i++)
+		{
+			switch (buffer[i])
+			{
+				case '/': // COMMENT
+					if (buffer[i + 1] == '/')
+					{
+						fprintf(stdout, 
+							"%d:%d %s\n\tline->%s\n",
+							linenumber,i,tokens[6],buffer); 
+						commentindex = i;
+						i = len;
+					} 
+					else 
+					{
+						fprintf(stderr, 
+							"%d:%d /< incomplete comment", 
+							linenumber, i);
+					}
+					break;
+				case '@':
+					fprintf(stdout, "%d:%d %s\n\tline->%s",
+					linenumber, i, tokens[0],buffer);
+					instructiontype = 0;
+					instructionindex = i;
+					break;
+				case '\n':
+					commentindex = i;
+					i = len;
+					break;
+			}
+		}
+		if (instructiontype != -1)
+			createInstruction(buffer, instructiontype,
+			    instructionindex, commentindex);
+		
+		instructiontype = -1;
+		commentindex = -1;
+
+		linenumber += 1;
+	}
+
+	fclose(fptr);
+
 	int i  = getJumpIndex("null");
-	printf("%d\n", i);
 	return 0;
 }
