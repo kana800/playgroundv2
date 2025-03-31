@@ -29,6 +29,26 @@ char* tokens[] = {
 	"COMMENT"
 };
 
+
+char* ram_reg[] = {
+        "0000000000000000",
+        "0000000000000001",
+        "0000000000000010",
+        "0000000000000011",
+        "0000000000000100",
+        "0000000000000101",
+        "0000000000000110",
+        "0000000000000111",
+        "0000000000001000",
+        "0000000000001001",
+        "0000000000001010",
+        "0000000000001011",
+        "0000000000001100",
+        "0000000000001101",
+        "0000000000001110",
+        "0000000000001111"
+};
+
 // null | the value is not stored
 // M    | RAM[A]
 // D    | D register
@@ -151,15 +171,24 @@ void createAInstruction(char buffer[], int instructiontype,
 	// sanitize the lines ie remove comments
 	// disassemble a instruction
 	char dest[100];
-	int len = commentindex - 1;
+	int len = commentindex;
 	memcpy(dest, &buffer[startingpoint], commentindex);
 	dest[len] = '\0';
 	fprintf(stdout, "(CI)\tsantized->%s\n", dest);
-	switch (instructiontype)
+
+	char tempreg[2];
+	memcpy(tempreg, dest, 2);
+	tempreg[2] = '\0';
+
+	// @R0 - @R15
+	if ((strcmp(tempreg,"@R") == 0) && (len <= 5))
 	{
-		case 0:
-			break;
+		char intreg[2];
+		memcpy(intreg, &dest[2], len);
+		intreg[len] = '\0';
+		int16_t ri = (int16_t)atol(intreg);
 	}
+
 	return;
 }
 
@@ -223,16 +252,23 @@ int main(int argc, char* argv[])
 					instructiontype = 0;
 					instructionindex = i;
 					break;
+				case ' ':
+					commentindex = i;
+					i = len;
+					break;
 				case '\n':
 					commentindex = i;
 					i = len;
 					break;
 			}
 		}
-		if (instructiontype != -1)
-			createInstruction(buffer, instructiontype,
-			    instructionindex, commentindex);
-		
+
+		switch (instructiontype)
+		{
+			case 0: // A INSTRUCTION
+				createAInstruction(buffer, instructiontype,
+				    instructionindex, commentindex);
+		}
 		instructiontype = -1;
 		commentindex = -1;
 
