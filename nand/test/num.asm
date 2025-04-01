@@ -1,15 +1,17 @@
 // Given two numbers stored in the registers R0 and R1,
 // compute the maximum between them and store it in the R2 register.
   @R0
-  D=M              // D = first number
   @R1
-  D=D-M            // D = first number - second number
   @OUTPUT_FIRST
-  D;JGT            // if D>0 (first is greater) goto output_first
   @R1
-  D=M              // D = second number
   @OUTPUT_D
-  0;JMP            // goto output_d
+  @21
+  @32
+  @111
+  @423
+  @11
+  @9999
+  @65532
 
 (OUTPUT_FIRST)
   @R0

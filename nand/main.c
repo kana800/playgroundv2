@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 struct bit3
 {
@@ -29,6 +30,12 @@ char* tokens[] = {
 	"COMMENT"
 };
 
+struct label
+{
+	char* labelname[50];
+	int line;
+	int pointer;
+};
 
 char* ram_reg[] = {
         "0000000000000000",
@@ -165,17 +172,18 @@ int getJumpIndex(char* d)
 	return i;
 }
 
-void createAInstruction(char buffer[], int instructiontype,
-		       int startingpoint, int commentindex)
+void createAInstruction(char buffer[], int startpoint, int endpoint)
 {
 	// sanitize the lines ie remove comments
 	// disassemble a instruction
 	char dest[100];
-	int len = commentindex;
-	memcpy(dest, &buffer[startingpoint], commentindex);
+	int len = endpoint;
+	memcpy(dest, &buffer[startpoint], endpoint);
 	dest[len] = '\0';
-	fprintf(stdout, "(CI)\tsantized->%s\n", dest);
 
+	assert(dest[0] == '@');
+
+	// @R
 	char tempreg[2];
 	memcpy(tempreg, dest, 2);
 	tempreg[2] = '\0';
@@ -187,8 +195,16 @@ void createAInstruction(char buffer[], int instructiontype,
 		memcpy(intreg, &dest[2], len);
 		intreg[len] = '\0';
 		int16_t ri = (int16_t)atol(intreg);
-	}
+	} else 
+	{
+		// @<number>
+		char tempnum[6];
+		memcpy(tempnum, &dest[1], endpoint);
+		tempnum[endpoint] = '\0';
+		printf("number %s", tempnum);
 
+		// @<LABEL>
+	}
 	return;
 }
 
@@ -219,9 +235,9 @@ int main(int argc, char* argv[])
 	int linenumber = 0;
 	char buffer[len];
 	
-	int instructiontype = 0;
+	int instructiontype = -1;
 	int instructionindex = -1;
-	int commentindex = -1;
+	int endpoint = -1;
 
 	while (fgets(buffer, len, fptr))
 	{
@@ -233,10 +249,7 @@ int main(int argc, char* argv[])
 				case '/': // COMMENT
 					if (buffer[i + 1] == '/')
 					{
-						fprintf(stdout, 
-							"%d:%d %s\n\tline->%s\n",
-							linenumber,i,tokens[6],buffer); 
-						commentindex = i;
+						endpoint = i;
 						i = len;
 					} 
 					else 
@@ -247,36 +260,36 @@ int main(int argc, char* argv[])
 					}
 					break;
 				case '@':
-					fprintf(stdout, "%d:%d %s\n\tline->%s",
-					linenumber, i, tokens[0],buffer);
 					instructiontype = 0;
 					instructionindex = i;
 					break;
 				case ' ':
-					commentindex = i;
-					i = len;
+					if (instructiontype > 0)
+					{
+						endpoint = i;
+						i = len;
+					}
 					break;
 				case '\n':
-					commentindex = i;
+					endpoint = i;
 					i = len;
 					break;
 			}
 		}
-
+		fprintf(stdout, "%d %s %d\n", linenumber, buffer,instructiontype);
 		switch (instructiontype)
 		{
 			case 0: // A INSTRUCTION
-				createAInstruction(buffer, instructiontype,
-				    instructionindex, commentindex);
+				createAInstruction(buffer, instructionindex, endpoint);
+				break;
 		}
 		instructiontype = -1;
-		commentindex = -1;
+		endpoint = -1;
 
 		linenumber += 1;
 	}
 
 	fclose(fptr);
 
-	int i  = getJumpIndex("null");
 	return 0;
 }
