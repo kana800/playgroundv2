@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ctype.h>
 
 struct bit3
 {
@@ -32,7 +33,7 @@ char* tokens[] = {
 
 struct label
 {
-	char* labelname[50];
+	char labelname[50];
 	int line;
 	int pointer;
 };
@@ -172,7 +173,9 @@ int getJumpIndex(char* d)
 	return i;
 }
 
-void createAInstruction(char buffer[], int startpoint, int endpoint)
+
+
+int16_t createAInstruction(char buffer[], int startpoint, int endpoint)
 {
 	// sanitize the lines ie remove comments
 	// disassemble a instruction
@@ -195,17 +198,24 @@ void createAInstruction(char buffer[], int startpoint, int endpoint)
 		memcpy(intreg, &dest[2], len);
 		intreg[len] = '\0';
 		int16_t ri = (int16_t)atol(intreg);
+		return ri;
 	} else 
 	{
 		// @<number>
-		char tempnum[6];
-		memcpy(tempnum, &dest[1], endpoint);
-		tempnum[endpoint] = '\0';
-		printf("number %s", tempnum);
+		char temp[98];
+		memcpy(temp, &dest[1], endpoint);
+		temp[endpoint] = '\0';
 
+		int int_conv = atoi(temp);
 		// @<LABEL>
+		if ((int_conv == 0) && (strcmp(temp, "0") != 0))
+		{
+		} else 
+		{
+			return int_conv;
+		}
 	}
-	return;
+	return -1;
 }
 
 int main(int argc, char* argv[])
@@ -227,66 +237,104 @@ int main(int argc, char* argv[])
 
 	fseek(fptr, 0L, SEEK_END);
 	int fsize = ftell(fptr);
-	unsigned char* symboltable = 
-		malloc(sizeof(unsigned char) * fsize);
 	fseek(fptr, 0L, SEEK_SET);
 
-	const unsigned int len = 256;
-	int linenumber = 0;
-	char buffer[len];
-	
+	char buffer[fsize];
+	size_t bytesread_f = fread(buffer, sizeof(char), fsize, fptr);
+
+	if (bytesread_f != fsize)
+	{
+		fprintf(stderr, 
+			"short read of '%s': expected %d bytes\n", 
+			argv[1], fsize);
+		return -1;
+	}
+
+	struct label* bufferarray = malloc(sizeof(struct label) * 256);
+
 	int instructiontype = -1;
 	int instructionindex = -1;
 	int endpoint = -1;
 
-	while (fgets(buffer, len, fptr))
+	int labelidx = -1;
+	int commentidx =  -1;
+	int atidx = -1; //@
+
+	int line = 0;
+	int labelcnt = 0;
+
+	char temp[256];
+
+	for (int i = 0; i < fsize; i++)
 	{
-		int i; // bufferindex
-		for (i = 0; i < len; i++)
+		switch (buffer[i])
 		{
-			switch (buffer[i])
-			{
-				case '/': // COMMENT
-					if (buffer[i + 1] == '/')
+			case '\n':
+				if (commentidx != -1)
+					commentidx = -1;
+				line++;
+				break;
+			case '/':
+				if (buffer[i + 1] == '/')
+				{
+					commentidx = i;
+				}
+				break;
+			case ' ':
+				if (commentidx != -1)
+				{
+					break;
+				}
+			case '(':
+				if (commentidx == -1)
+					labelidx = i;
+				break;
+			case ')':
+				if ( labelidx != -1)
+				{
+					char* labeladdr = 
+						bufferarray[labelcnt].labelname;
+					int labelsize = i - labelidx;
+					memcpy(labeladdr, &buffer[labelidx + 1], 
+						labelsize - 1);
+					labeladdr[labelsize] = '\0';
+					bufferarray[labelcnt].line = line;
+					bufferarray[labelcnt].pointer = labelidx;
+					labelcnt += 1;
+				}
+				labelidx = -1;
+				break;
+			case '@':
+				if (commentidx != -1) break;
+				int j = i;
+				for (;;)
+				{
+					if ((buffer[j] == ' ') ||
+						(buffer[j] == '\n'))
 					{
-						endpoint = i;
-						i = len;
-					} 
-					else 
-					{
-						fprintf(stderr, 
-							"%d:%d /< incomplete comment", 
-							linenumber, i);
+						break;
 					}
-					break;
-				case '@':
-					instructiontype = 0;
-					instructionindex = i;
-					break;
-				case ' ':
-					if (instructiontype > 0)
-					{
-						endpoint = i;
-						i = len;
-					}
-					break;
-				case '\n':
-					endpoint = i;
-					i = len;
-					break;
-			}
-		}
-		fprintf(stdout, "%d %s %d\n", linenumber, buffer,instructiontype);
-		switch (instructiontype)
-		{
-			case 0: // A INSTRUCTION
-				createAInstruction(buffer, instructionindex, endpoint);
+					j++;
+				}
+				memcpy(temp, &buffer[i], j - i);
+				temp[j - i] = '\0';
+				i = j - 1;
+
+				// @R<num>
+				// @<num>
+				// @label
+				if (temp[1] == 'R' && isdigit(temp[2]))
+				{
+					printf("@R->%s\n",temp);
+				} else if (isdigit(temp[1])) 
+				{
+					printf("@num->%s\n",temp);
+				} else 
+				{
+					printf("@label->%s\n",temp);
+				}
 				break;
 		}
-		instructiontype = -1;
-		endpoint = -1;
-
-		linenumber += 1;
 	}
 
 	fclose(fptr);
