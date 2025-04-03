@@ -7,7 +7,7 @@ TEST2DIR:=test
 hav_gen: hav_gen.c hav_formula.h pcg64.h
 	$(CC) -g $^ -lm -o $(BUILDDIR)/$@.out
 
-parser: jsonparser.c
+parser: jsonparser.c platform_metrics.h
 	$(CC) -g $^ -o $(BUILDDIR)/$@.out
 
 ostimer: listing_0071_os_timer_main.cpp listing_0070_platform_metrics.cpp

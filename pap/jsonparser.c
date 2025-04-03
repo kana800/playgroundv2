@@ -6,6 +6,9 @@
 #include <string.h>
 #include <assert.h>
 
+#include "platform_metrics.h"
+
+
 char* dataType[] = {"COLON_START","COLON_END","STRING_START", 
 		"STRING_END","LIST_START","LIST_END",
 		"INT_START","INT_END","BOOL_START", 
@@ -56,6 +59,10 @@ int main(int argc, char* argv[])
 			"invalid filepath\nusage: parser <filepath.json>\n");
 		return -1;
 	}
+
+	u64 OSStart = ReadOSTimer();
+	u64 CPUStart = ReadCPUTimer();
+	u64 OSEnd, OSElapsed = 0;
 
 	int bufferlen = 75;
 	char buffer[bufferlen];
@@ -111,5 +118,14 @@ int main(int argc, char* argv[])
 			printf("%d %lf\n",i, data[i]);
 		}
 	}
+
+
+	OSEnd = ReadOSTimer();
+	u64 CPUEnd = ReadCPUTimer();
+	u64 CPUElapsed = CPUEnd - CPUStart;
+	OSElapsed = OSEnd - OSStart;
+	
+	printf("Parsing: %llu %llu\n", OSElapsed, CPUElapsed);
+
 	return 0;
 }
