@@ -4,23 +4,6 @@
 #include <assert.h>
 #include <ctype.h>
 
-struct bit3
-{
-	int d1:1;
-	int d2:1;
-	int d3:1;
-};
-
-struct bit6
-{
-	int c1:1;
-	int c2:1;
-	int c3:1;
-	int c4:1;
-	int c5:1;
-	int c6:1;
-};
-
 char* tokentype[] = {
 	"AINSTRUCTION",
 	"CINSTRUCTION",
@@ -113,57 +96,48 @@ char* jump_table[8] = {
 	"JMP"
 };
 
-struct bit6 comp_bit_table[18] = {
-	{1,0,1,0,1,0},
-	{1,1,1,1,1,1},
-	{1,1,1,0,1,0},
-	{0,0,1,1,0,0},
-	{1,1,0,0,0,0},
-	{0,0,1,1,0,1},
-	{1,1,0,0,0,1},
-	{0,1,1,1,1,1},
-	{1,1,0,0,1,1},
-	{0,1,1,1,1,1},
-	{1,1,0,1,1,1},
-	{0,0,1,1,1,0},
-	{1,1,0,0,1,0},
-	{0,0,0,0,1,0},
-	{0,1,0,0,1,1},
-	{0,0,0,1,1,1},
-	{0,0,0,0,0,0},
-	{0,1,0,1,0,1}
+char* comp_bit_table[18] = {
+	"101010",
+	"111111",
+	"111010",
+	"001100",
+	"110000",
+	"001101",
+	"110001",
+	"011111",
+	"110011",
+	"011111",
+	"110111",
+	"001110",
+	"110010",
+	"000010",
+	"010011",
+	"000111",
+	"000000",
+	"010101"
 };
 
-char* comp_a_table[18][2] = {
-	{"0",""},
-	{"1",""},
-	{"-1",""},
-	{"D",""},
-	{"A","M"},
-	{"!D",""},
-	{"!A", "!M"},
-	{"-D",""},
-	{"-A","-M"},
-	{"D+1",""},
-	{"A+1","M+1"},
-	{"D-1",""},
-	{"A-1","M-1"},
-	{"D+A","D+M"},
-	{"D-A","D-M"},
-	{"A-D","M-D"},
-	{"D&A","D&M"},
-	{"D|A","D|M"}
+char* comp_table[36] = {
+	"0","1","-1","D",
+	"A","!D","!A","-D",
+	"-A","D+1","A+1","D-1",
+	"A-1","D+A","D-A","A-D",
+	"D&A","D|A","","","","",
+	"M","","!M","","-M","",
+	"M+1","","M-1","D+M",
+	"D-M","M-D","D&M","D|M"
 };
 
-struct bit3 dest_jmp_table[8] = {
-	{0, 0, 0}, // null | the value is not stored
-	{0, 0, 1}, // M    | RAM[A]
-	{0, 1, 0}, // D    | D register
-	{0, 1, 1}, // MD   | RAM[A] and D register
-	{1, 0, 0}, // A    | A register
-	{1, 0, 1}, // AM   | A register and RAM[A]
-	{1, 1, 0}, // AD   | A register and D register
-	{1, 1, 1}, // AMD  | A register, RAM[A] and D register
+
+char* dest_jmp_table[8] = {
+	"000", // null | the value is not stored
+	"001", // M    | RAM[A]
+	"010", // D    | D register
+	"011", // MD   | RAM[A] and D register
+	"100", // A    | A register
+	"101", // AM   | A register and RAM[A]
+	"110", // AD   | A register and D register
+	"111", // AMD  | A register, RAM[A] and D register
 };
 
 void itob(char** b, int num)
@@ -244,6 +218,7 @@ int main(int argc, char* argv[])
 	int atidx = -1; // @
 
 	int line = 0;
+
 	char linebuffer[256];
 	int li = 0;
 
@@ -264,9 +239,24 @@ int main(int argc, char* argv[])
 		switch (buffer[i])
 		{
 			case '\n':
-				if (commentidx != -1)
-					commentidx = -1;
+				if (li != 0)
+				{
+					linebuffer[li] = '\0';
+					tokenarray[tokencount].comp = 1;
+					tokenarray[tokencount].type = 1;
+					char* t = tokenarray[tokencount].binary;
+					memcpy(t, linebuffer, li);
+					t[li] = '\0';
+					tokenarray[tokencount].line = line;
+					tokenarray[tokencount].spoint = i;
+					tokenarray[tokencount].len = li;
+					tokencount += 1;
+				}
+				// resetting values;
 				li = 0;
+				atidx = -1;
+				commentidx = -1;
+
 				line++;
 				break;
 			case '/':
@@ -277,14 +267,7 @@ int main(int argc, char* argv[])
 				break;
 			case ' ':
 				if (commentidx != -1) break;
-				li = 0;
-				break;
-			case '=':
-				if (commentidx != -1) break;
 				if (li == 0) break;
-				linebuffer[li] = '\0';
-				printf("line buffer %s\n", linebuffer);
-				break;
 			case '(':
 				if (commentidx == -1)
 				{
@@ -320,6 +303,7 @@ int main(int argc, char* argv[])
 					j++;
 				}
 				//@R<AAA>
+				atidx = i;
 				memcpy(temp, &buffer[i], j - i);
 				temp[j - i] = '\0';
 				// @R<num>
@@ -364,11 +348,13 @@ int main(int argc, char* argv[])
 				break;
 			default:
 				if (commentidx != -1) break;
+				if (atidx != -1) break;
+				if (labelidx != -1) break;
 				linebuffer[li] = buffer[i];
 				li += 1;
 				break;
 		}
-	}
+	}	
 
 	for (int i = 0; i < tokencount; i++)
 	{
@@ -378,6 +364,63 @@ int main(int argc, char* argv[])
 		fprintf(stdout,"%d:%d %s->%s\n",
 			t.line, t.spoint, 
 			tokentype[t.type], t.binary);
+		switch (t.type)
+		{
+			case 1:
+				char cins[16];
+
+				char* etp = strtok(t.binary, "=");
+				// DESTINATION
+				int res = strcmp(etp, t.binary);
+				if (res != 0)
+				{
+					for ( int j = 0; j < 7; j++ )
+					{
+						if (strcmp(etp, dest_table[j]) == 0)
+						{
+							break;
+						}
+					}
+					etp = strtok(NULL, "=");
+				} else
+				{
+					// DESTINATION IS NULL
+					etp = strtok(t.binary, ";");
+				}
+				// COMP
+				for (int k = 0; k < 36; k++)
+				{
+					if (strcmp(etp, comp_table[k]) == 0)
+					{
+						if (k > 16) 
+						{
+							printf("\t%s\n",comp_bit_table[k - 16]); 
+						} else 
+						{
+							printf("\t%s\n",comp_bit_table[k]); 
+						}
+						break;
+					}
+				}
+				// JUMP
+				char* jtp = strtok(t.binary, ";");
+				printf("k %s\n",jtp);
+				if (strcmp(jtp, t.binary) != 0)
+				{
+					jtp = strtok(NULL, ";");
+					printf("k %s\n",jtp);
+					for (int l = 0; l < 8; l++)
+					{
+						if (strcmp(jtp, jump_table[l]) == 0)
+						{
+							printf("\t%s\n",jump_table[l]);
+						}
+					}
+				}
+
+				break;
+		}
+
 	}
 
 	for ( int i = 0; i < labelcall; i++)
