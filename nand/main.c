@@ -92,7 +92,7 @@ char* jump_table[8] = {
 	"JGE", 
 	"JLT", 
 	"JNE", 
-	"JLE"
+	"JLE",
 	"JMP"
 };
 
@@ -367,17 +367,30 @@ int main(int argc, char* argv[])
 		switch (t.type)
 		{
 			case 1:
-				char cins[16];
+				char dest[16];
 
-				char* etp = strtok(t.binary, "=");
+				char str1[16];
+				char str2[16];
+				memcpy(str1,t.binary,16);
+				str1[16] = '\0';
+				memcpy(str2,t.binary,16);
+				str2[16] = '\0';
+
+				int d_ins = 0;
+				int j_ins = 0;
+
+				char* etp = strtok(str1, "=");
 				// DESTINATION
-				int res = strcmp(etp, t.binary);
+				int res = strcmp(etp,t.binary);
+				printf("\t");
+				printf("111");
 				if (res != 0)
 				{
 					for ( int j = 0; j < 7; j++ )
 					{
 						if (strcmp(etp, dest_table[j]) == 0)
 						{
+							d_ins = j;
 							break;
 						}
 					}
@@ -385,7 +398,7 @@ int main(int argc, char* argv[])
 				} else
 				{
 					// DESTINATION IS NULL
-					etp = strtok(t.binary, ";");
+					etp = strtok(str1, ";");
 				}
 				// COMP
 				for (int k = 0; k < 36; k++)
@@ -394,29 +407,31 @@ int main(int argc, char* argv[])
 					{
 						if (k > 16) 
 						{
-							printf("\t%s\n",comp_bit_table[k - 16]); 
+							printf("1%s",comp_bit_table[k - 16]); 
 						} else 
 						{
-							printf("\t%s\n",comp_bit_table[k]); 
+							printf("0%s",comp_bit_table[k]); 
 						}
 						break;
 					}
 				}
 				// JUMP
-				char* jtp = strtok(t.binary, ";");
-				printf("k %s\n",jtp);
-				if (strcmp(jtp, t.binary) != 0)
+				char* jtp = strtok(str2, ";");
+				if (strcmp(str2, t.binary) != 0)
 				{
 					jtp = strtok(NULL, ";");
-					printf("k %s\n",jtp);
 					for (int l = 0; l < 8; l++)
 					{
 						if (strcmp(jtp, jump_table[l]) == 0)
 						{
-							printf("\t%s\n",jump_table[l]);
+							j_ins = l;
+							break;
 						}
 					}
 				}
+				
+				printf("%s", dest_jmp_table[d_ins]);
+				printf("%s\n", dest_jmp_table[j_ins]);
 
 				break;
 		}
