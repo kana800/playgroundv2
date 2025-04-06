@@ -37,6 +37,7 @@ struct pair
 {
 	int x;
 	int y;
+	int tindex;
 };
 
 char* ram_reg[] = {
@@ -188,6 +189,7 @@ int main(int argc, char* argv[])
 	}
 
 	FILE* fptr = fopen(argv[1], "r");
+	FILE* wptr = fopen("output.hack", "w");
 	
 	if (!fptr)
 	{
@@ -242,7 +244,7 @@ int main(int argc, char* argv[])
 				if (li != 0)
 				{
 					linebuffer[li] = '\0';
-					tokenarray[tokencount].comp = 1;
+					tokenarray[tokencount].comp = -1;
 					tokenarray[tokencount].type = 1;
 					char* t = tokenarray[tokencount].binary;
 					memcpy(t, linebuffer, li);
@@ -275,7 +277,8 @@ int main(int argc, char* argv[])
 				}
 				break;
 			case ')':
-				if ( labelidx != -1)
+				if (commentidx != -1) break;
+				if (labelidx != -1)
 				{
 					char* labeladdr = 
 						bufferarray[labelcnt].labelname;
@@ -312,8 +315,8 @@ int main(int argc, char* argv[])
 				if (temp[1] == 'R' && isdigit(temp[2]))
 				{
 					int val = atoi(&temp[2]);
-					printf("@R->%s %d %s\n",
-							temp, val, ram_reg[val]);
+//					printf("@R->%s %d %s\n",
+//							temp, val, ram_reg[val]);
 					tokenarray[tokencount].comp = 1;
 					tokenarray[tokencount].type = 0;
 					char* t = tokenarray[tokencount].binary;
@@ -333,7 +336,7 @@ int main(int argc, char* argv[])
 					char* t = tokenarray[tokencount].binary;
 					itob(&t, val);
 					t[16] = '\0';
-					printf("%d -> %s\n", val, t);
+//					printf("%d -> %s\n", val, t);
 					tokenarray[tokencount].line = line;
 					tokenarray[tokencount].spoint = i;
 					tokenarray[tokencount].len = j - i;
@@ -342,7 +345,16 @@ int main(int argc, char* argv[])
 				{
 					labellocation[labelcall].x = i;
 					labellocation[labelcall].y = j - i;
+					labellocation[labelcall].tindex = tokencount;
 					labelcall += 1;
+
+					// token
+					tokenarray[tokencount].comp = -1;
+					tokenarray[tokencount].type = 4;
+					tokenarray[tokencount].line = line;
+					tokenarray[tokencount].spoint = i;
+					tokenarray[tokencount].len = j - i;
+					tokencount += 1;
 				}
 				i = j - 1;
 				break;
@@ -356,6 +368,35 @@ int main(int argc, char* argv[])
 		}
 	}	
 
+	char lname[265];
+	printf("labels detected %d\n", labelcall);
+	for ( int i = 0; i < labelcall; i++)
+	{
+		int x = labellocation[i].x;
+		int y = labellocation[i].y;
+		int idx = labellocation[i].tindex;
+		memcpy(lname,&buffer[x], y);
+		lname[y] = '\0';
+		printf("label %d -> %s (tid:%d)\n",
+			i,lname,idx);
+		for ( int j = 0; j < labelcnt; j++)
+		{
+			char* labeladdr = bufferarray[j].labelname;
+			//printf("%s -> %d\n",labeladdr, 
+			//		bufferarray[j].line);
+			if (strcmp(lname,labeladdr) == 0)
+			{
+				tokenarray[idx].comp = 1;
+				printf("%s -> %d\n",labeladdr, 
+						bufferarray[j].line);
+				char* t = tokenarray[idx].binary;
+				itob(&t, bufferarray[j].line);
+				t[16] = '\0';
+				break;
+			}
+		}
+	}
+
 	for (int i = 0; i < tokencount; i++)
 	{
 		struct token t = tokenarray[i];
@@ -364,6 +405,7 @@ int main(int argc, char* argv[])
 		fprintf(stdout,"%d:%d %s->%s\n",
 			t.line, t.spoint, 
 			tokentype[t.type], t.binary);
+		if (t.comp == 1) fprintf(wptr,"%s\n",t.binary);
 		switch (t.type)
 		{
 			case 1:
@@ -378,6 +420,7 @@ int main(int argc, char* argv[])
 
 				int d_ins = 0;
 				int j_ins = 0;
+				int c_ins = 0;
 
 				char* etp = strtok(str1, "=");
 				// DESTINATION
@@ -405,13 +448,7 @@ int main(int argc, char* argv[])
 				{
 					if (strcmp(etp, comp_table[k]) == 0)
 					{
-						if (k > 16) 
-						{
-							printf("1%s",comp_bit_table[k - 16]); 
-						} else 
-						{
-							printf("0%s",comp_bit_table[k]); 
-						}
+						c_ins = k;
 						break;
 					}
 				}
@@ -430,33 +467,25 @@ int main(int argc, char* argv[])
 					}
 				}
 				
+				if (c_ins > 16) 
+				{
+					printf("1%s",comp_bit_table[c_ins - 16]); 
+					fprintf(wptr,"1111%s",comp_bit_table[c_ins-16]);
+				} else 
+				{
+					printf("0%s",comp_bit_table[c_ins]); 
+					fprintf(wptr,"1110%s",comp_bit_table[c_ins]);
+				}
 				printf("%s", dest_jmp_table[d_ins]);
 				printf("%s\n", dest_jmp_table[j_ins]);
-
+				fprintf(wptr,"%s%s\n",dest_jmp_table[d_ins],dest_jmp_table[j_ins]);
 				break;
 		}
 
-	}
-
-	for ( int i = 0; i < labelcall; i++)
-	{
-		int x = labellocation[i].x;
-		int y = labellocation[i].y;
-		memcpy(temp,&buffer[x], y);
-		temp[y] = '\0';
-		for ( int j = 0; j < labelcnt; j++)
-		{
-			char* labeladdr = bufferarray[j].labelname;
-			if (strcmp(temp,labeladdr) == 0)
-			{
-				printf("%s -> %d\n",labeladdr, 
-						bufferarray[j].line);
-				break;
-			}
-		}
 	}
 
 	fclose(fptr);
+	fclose(wptr);
 
 	return 0;
 }
