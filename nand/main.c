@@ -41,22 +41,22 @@ struct pair
 };
 
 char* ram_reg[] = {
-        "000000000000000",
-        "000000000000001",
-        "000000000000010",
-        "000000000000011",
-        "000000000000100",
-        "000000000000101",
-        "000000000000110",
-        "000000000000111",
-        "000000000001000",
-        "000000000001001",
-        "000000000001010",
-        "000000000001011",
-        "000000000001100",
-        "000000000001101",
-        "000000000001110",
-        "000000000001111"
+        "0000000000000000",
+        "0000000000000001",
+        "0000000000000010",
+        "0000000000000011",
+        "0000000000000100",
+        "0000000000000101",
+        "0000000000000110",
+        "0000000000000111",
+        "0000000000001000",
+        "0000000000001001",
+        "0000000000001010",
+        "0000000000001011",
+        "0000000000001100",
+        "0000000000001101",
+        "0000000000001110",
+        "0000000000001111"
 };
 
 // null | the value is not stored
@@ -249,11 +249,15 @@ int main(int argc, char* argv[])
 					char* t = tokenarray[tokencount].binary;
 					memcpy(t, linebuffer, li);
 					t[li] = '\0';
+					//printf("\t\t line -> %d | %s\n",
+					//			line, linebuffer);
 					tokenarray[tokencount].line = line;
 					tokenarray[tokencount].spoint = i;
 					tokenarray[tokencount].len = li;
 					tokencount += 1;
 				}
+				printf("\t\t line -> %d | %s\n",
+							line, linebuffer);
 				// resetting values;
 				li = 0;
 				atidx = -1;
@@ -298,9 +302,11 @@ int main(int argc, char* argv[])
 				int j = i;
 				for (;;)
 				{
+					printf("%c",buffer[j]);
 					if ((buffer[j] == ' ') ||
 						(buffer[j] == '\n'))
 					{
+						printf("\n");
 						break;
 					}
 					j++;
@@ -309,6 +315,7 @@ int main(int argc, char* argv[])
 				atidx = i;
 				memcpy(temp, &buffer[i], j - i);
 				temp[j - i] = '\0';
+				printf("\t\tinside @ %s\n",temp);
 				// @R<num>
 				// @<num>
 				// @label
@@ -320,14 +327,13 @@ int main(int argc, char* argv[])
 					tokenarray[tokencount].comp = 1;
 					tokenarray[tokencount].type = 0;
 					char* t = tokenarray[tokencount].binary;
-					memcpy(t, ram_reg[val],15);
-					t[16] = '\0';
+					memcpy(t, ram_reg[val],16);
+				//	t[17] = '\0';
 
 					tokenarray[tokencount].line = line;
 					tokenarray[tokencount].spoint = i;
 					tokenarray[tokencount].len = j - i;
 					tokencount += 1;
-
 				} else if (isdigit(temp[1])) 
 				{
 					int val = atoi(&temp[2]);
@@ -363,13 +369,14 @@ int main(int argc, char* argv[])
 				if (atidx != -1) break;
 				if (labelidx != -1) break;
 				linebuffer[li] = buffer[i];
+				printf("def %s\n",linebuffer);
 				li += 1;
 				break;
 		}
 	}	
 
 	char lname[265];
-	printf("labels detected %d\n", labelcall);
+//	printf("labels detected %d\n", labelcall);
 	for ( int i = 0; i < labelcall; i++)
 	{
 		int x = labellocation[i].x;
@@ -377,8 +384,8 @@ int main(int argc, char* argv[])
 		int idx = labellocation[i].tindex;
 		memcpy(lname,&buffer[x], y);
 		lname[y] = '\0';
-		printf("label %d -> %s (tid:%d)\n",
-			i,lname,idx);
+//		printf("label %d -> %s (tid:%d)\n",
+//			i,lname,idx);
 		for ( int j = 0; j < labelcnt; j++)
 		{
 			char* labeladdr = bufferarray[j].labelname;
