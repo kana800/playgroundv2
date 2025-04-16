@@ -66,4 +66,9 @@ static u64 guessCPUFrequency(long mstowait)
 	return CPUFreq;
 }
 
+
+static :BeginTimer()
+
+
+
 #endif // METRICS_H

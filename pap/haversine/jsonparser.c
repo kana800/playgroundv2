@@ -8,7 +8,6 @@
 
 #include "platform_metrics.h"
 
-
 char* dataType[] = {"COLON_START","COLON_END","STRING_START", 
 		"STRING_END","LIST_START","LIST_END",
 		"INT_START","INT_END","BOOL_START", 
