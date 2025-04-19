@@ -18,23 +18,6 @@ struct t_storage {
 	int pos;
 };
 
-struct t_keyvalue {
-	int k_datatype;
-	int k_pos;
-	void* key;
-	int v_datatype;
-	int v_pos;
-	void* value;
-};
-
-struct t_keyvalue* createKeyValueContainer(
-	char* buffer, int keystartpos, int keyendpos)
-{
-	// keys are always string type
-//	memcpy(dest, buffer+startpos, currpos-startpos);
-//	dest[currpos-startpos] = '\0';
-}
-
 struct t_storage* createContainer(int datatype, int pos)
 {
 	struct t_storage* t = malloc(sizeof(struct t_storage) * 1);
@@ -51,6 +34,8 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	BeginTimer("File");
+	
 	FILE* fptr = fopen(argv[1], "r");
 	if (!fptr) 
 	{ 
@@ -59,9 +44,13 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	EndTimer();
+
 	u64 OSStart = ReadOSTimer();
 	u64 CPUStart = ReadCPUTimer();
 	u64 OSEnd, OSElapsed = 0;
+
+	BeginTimer("Parser");
 
 	int bufferlen = 75;
 	char buffer[bufferlen];
@@ -76,6 +65,7 @@ int main(int argc, char* argv[])
 	int count = 0;
 	while (fgets(buffer, bufferlen, fptr))
 	{
+		BeginTimer("ForLoop");
 		char dest[100];
 		int toread = 8;
 		char* token = strtok(buffer, delim);
@@ -116,6 +106,7 @@ int main(int argc, char* argv[])
 		{
 			printf("%d %lf\n",i, data[i]);
 		}
+		EndTimer();
 	}
 
 
@@ -123,6 +114,7 @@ int main(int argc, char* argv[])
 	u64 CPUEnd = ReadCPUTimer();
 	u64 CPUElapsed = CPUEnd - CPUStart;
 	OSElapsed = OSEnd - OSStart;
+	EndTimer();
 	
 	printf("Parsing: %llu %llu\n", OSElapsed, CPUElapsed);
 

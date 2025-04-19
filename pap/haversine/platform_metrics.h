@@ -4,10 +4,28 @@
 #include <x86intrin.h>
 #include <sys/time.h>
 #include <stdint.h>
-//#include <cstdint>
+#include <stdio.h>
+#include <string.h>
 
 typedef uint64_t u64;
 typedef double f64;
+
+struct t_timedata
+{
+	char name[20];
+	int idx;
+	u64 OSStart;
+	u64 OSEnd;
+	u64 OSElapsed;
+	u64 CPUStart;
+	u64 CPUEnd;
+	u64 CPUElapsed;
+};
+
+static int s_starttimeidx = 0;
+static int s_endtimeidx = 0;
+static struct t_timedata a_timedatamem[100];
+static struct t_timedata s_time;
 
 static u64 GetOSTimerFreq(void)
 {
@@ -66,9 +84,36 @@ static u64 guessCPUFrequency(long mstowait)
 	return CPUFreq;
 }
 
+static void BeginTimer(char* name)
+{
+	struct t_timedata* temp = &a_timedatamem[s_starttimeidx];
+	temp->OSStart = ReadOSTimer();
+	temp->CPUStart = ReadCPUTimer();
+	temp->idx = s_starttimeidx;
+	int slen = strlen(name);
+	memcpy(temp->name,name,slen);
+	temp->name[slen + 1] = '\0';
+	s_starttimeidx += 1;
+//	s_time.OSStart = ReadOSTimer();
+//	s_time.CPUStart = ReadCPUTimer();
+}
 
-static :BeginTimer()
-
+static void EndTimer()
+{
+	struct t_timedata* temp = &a_timedatamem[s_endtimeidx];
+	temp->OSEnd = ReadOSTimer();
+	temp->CPUEnd = ReadCPUTimer();
+	temp->OSElapsed = temp->OSEnd - temp->OSStart;
+	temp->CPUElapsed = temp->CPUEnd - temp->CPUStart;
+	printf("(%s) Elapsed Time %llu %llu\n", 
+		temp->name, temp->OSElapsed, temp->CPUElapsed);
+	s_endtimeidx += 1;
+//	s_time.OSEnd = ReadOSTimer();
+//	s_time.CPUEnd = ReadCPUTimer();
+//	s_time.OSElapsed =  s_time.OSEnd - s_time.OSStart;
+//	s_time.CPUElapsed = s_time.CPUEnd - s_time.CPUStart;
+//	printf("Elapsed Time %llu %llu\n", s_time.OSElapsed, s_time.CPUElapsed);
+}
 
 
 #endif // METRICS_H

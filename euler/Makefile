@@ -50,4 +50,7 @@ day16: 16.c
 48: 48.c
 #	cp -r external/gmp-6.3.0/libgmp.la $(BUILDDIR)/
 	$(CC) -g $^ $(GMP) -L$(BUILDDIR)/ -l:libgmp.a -o $(BUILDDIR)/$@.o
-
+44: 44.c
+#	cp -r external/gmp-6.3.0/libgmp.la $(BUILDDIR)/
+#	$(CC) -g $^ $(GMP) -L$(BUILDDIR)/ -l:libgmp.a -o $(BUILDDIR)/$@.o
+	$(CC) -g $^ -lm -o $@.o
