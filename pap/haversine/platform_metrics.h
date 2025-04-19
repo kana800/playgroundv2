@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 typedef uint64_t u64;
 typedef double f64;
@@ -94,25 +95,22 @@ static void BeginTimer(char* name)
 	memcpy(temp->name,name,slen);
 	temp->name[slen + 1] = '\0';
 	s_starttimeidx += 1;
-//	s_time.OSStart = ReadOSTimer();
-//	s_time.CPUStart = ReadCPUTimer();
 }
 
 static void EndTimer()
 {
-	struct t_timedata* temp = &a_timedatamem[s_endtimeidx];
+	assert(s_starttimeidx != 0);
+	int idx = s_starttimeidx - s_endtimeidx;
+	if (s_starttimeidx == 1) idx = 0;
+	struct t_timedata* temp = &a_timedatamem[idx];
 	temp->OSEnd = ReadOSTimer();
 	temp->CPUEnd = ReadCPUTimer();
 	temp->OSElapsed = temp->OSEnd - temp->OSStart;
 	temp->CPUElapsed = temp->CPUEnd - temp->CPUStart;
-	printf("(%s) Elapsed Time %llu %llu\n", 
-		temp->name, temp->OSElapsed, temp->CPUElapsed);
+	printf("%d(%s) Elapsed Time %llu %llu\n",
+		idx, temp->name, 
+		temp->OSElapsed, temp->CPUElapsed);
 	s_endtimeidx += 1;
-//	s_time.OSEnd = ReadOSTimer();
-//	s_time.CPUEnd = ReadCPUTimer();
-//	s_time.OSElapsed =  s_time.OSEnd - s_time.OSStart;
-//	s_time.CPUElapsed = s_time.CPUEnd - s_time.CPUStart;
-//	printf("Elapsed Time %llu %llu\n", s_time.OSElapsed, s_time.CPUElapsed);
 }
 
 
