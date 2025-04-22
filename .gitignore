@@ -69,3 +69,4 @@ Cargo.lock
 pap/build
 euler/external/gmp-6.3.0
 euler/build
+*.json
