@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 	pcg64_seed(&rng, seed, seed);
 
 	FILE* fptr = fopen("output.json", "w");
-	fprintf(fptr, "{\n'pair':[\n");
+	fprintf(fptr, "{\n\"pair\":[\n");
 	
 	for (int i = 0; i < itr; i++)
 	{

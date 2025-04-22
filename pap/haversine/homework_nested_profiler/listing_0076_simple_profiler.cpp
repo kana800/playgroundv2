@@ -11,7 +11,7 @@
    ======================================================================== */
 
 /* ========================================================================
-   LISTING 81
+   LISTING 76
    ======================================================================== */
 
 #include "listing_0074_platform_metrics.cpp"
@@ -19,7 +19,6 @@
 struct profile_anchor
 {
     u64 TSCElapsed;
-    u64 TSCElapsedChildren;
     u64 HitCount;
     char const *Label;
 };
@@ -32,30 +31,21 @@ struct profiler
     u64 EndTSC;
 };
 static profiler GlobalProfiler;
-static u32 GlobalProfilerParent;
 
 struct profile_block
 {
     profile_block(char const *Label_, u32 AnchorIndex_)
     {
-        ParentIndex = GlobalProfilerParent;
-        
         AnchorIndex = AnchorIndex_;
         Label = Label_;
-        
-        GlobalProfilerParent = AnchorIndex;
         StartTSC = ReadCPUTimer();
     }
     
     ~profile_block(void)
     {
         u64 Elapsed = ReadCPUTimer() - StartTSC;
-        GlobalProfilerParent = ParentIndex;
         
-        profile_anchor *Parent = GlobalProfiler.Anchors + ParentIndex;
         profile_anchor *Anchor = GlobalProfiler.Anchors + AnchorIndex;
-        
-        Parent->TSCElapsedChildren += Elapsed;
         Anchor->TSCElapsed += Elapsed;
         ++Anchor->HitCount;
                 
@@ -68,7 +58,6 @@ struct profile_block
 
     char const *Label;
     u64 StartTSC;
-    u32 ParentIndex;
     u32 AnchorIndex;
 };
 
@@ -79,15 +68,9 @@ struct profile_block
 
 static void PrintTimeElapsed(u64 TotalTSCElapsed, profile_anchor *Anchor)
 {
-    u64 Elapsed = Anchor->TSCElapsed - Anchor->TSCElapsedChildren;
+    u64 Elapsed = Anchor->TSCElapsed;
     f64 Percent = 100.0 * ((f64)Elapsed / (f64)TotalTSCElapsed);
-    printf("  %s[%llu]: %llu (%.2f%%", Anchor->Label, Anchor->HitCount, Elapsed, Percent);
-    if(Anchor->TSCElapsedChildren)
-    {
-        f64 PercentWithChildren = 100.0 * ((f64)Anchor->TSCElapsed / (f64)TotalTSCElapsed);
-        printf(", %.2f%% w/children", PercentWithChildren);
-    }
-    printf(")\n");
+    printf("  %s[%llu]: %llu (%.2f%%)\n", Anchor->Label, Anchor->HitCount, Elapsed, Percent);
 }
 
 static void BeginProfile(void)
