@@ -11,7 +11,7 @@
    ======================================================================== */
 
 /* ========================================================================
-   LISTING 79
+   LISTING 83
    ======================================================================== */
 
 enum json_token_type
@@ -250,6 +250,8 @@ static json_token GetJSONToken(json_parser *Parser)
 static json_element *ParseJSONList(json_parser *Parser, json_token_type EndType, b32 HasLabels);
 static json_element *ParseJSONElement(json_parser *Parser, buffer Label, json_token Value)
 {
+    TimeFunction;
+    
     b32 Valid = true;
     
     json_element *SubElement = 0;

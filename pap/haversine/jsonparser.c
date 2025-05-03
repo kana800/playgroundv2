@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	BeginTimer("File");
+	TimeBlock();
 	
 	FILE* fptr = fopen(argv[1], "r");
 	if (!fptr) 

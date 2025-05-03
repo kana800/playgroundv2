@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 		f64 x1 = generateXcoord(&rng);
 		f64 y1 = generateYcoord(&rng);
 
-		fprintf(fptr, "\t{'x0':%lf,'y0':%lf,'x1':%lf,'y1':%lf},\n",
+		fprintf(fptr, "\t{\"x0\":%lf,\"y0\":%lf,\"x1\":%lf,\"y1\":%lf},\n",
 				x0,y0,x1,y1);
 	}
 
@@ -71,8 +71,7 @@ int main(int argc, char** argv)
 	f64 y0 = generateYcoord(&rng);
 	f64 x1 = generateXcoord(&rng);
 	f64 y1 = generateYcoord(&rng);
-
-	fprintf(fptr, "\t{'x0':%lf,'y0':%lf,'x1':%lf,'y1':%lf}\n",
+	fprintf(fptr, "\t{\"x0\":%lf,\"y0\":%lf,\"x1\":%lf,\"y1\":%lf},\n",
 			x0,y0,x1,y1);
 	fprintf(fptr,"]\n}");
 	return 0;

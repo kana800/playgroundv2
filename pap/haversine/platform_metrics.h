@@ -85,7 +85,7 @@ static u64 guessCPUFrequency(long mstowait)
 	return CPUFreq;
 }
 
-static void BeginTimer(char* name)
+static void BeginTimer(const char* name)
 {
 	struct t_timedata* temp = &a_timedatamem[s_starttimeidx];
 	temp->OSStart = ReadOSTimer();
@@ -113,5 +113,6 @@ static void EndTimer()
 	s_endtimeidx += 1;
 }
 
+#define TimeBlock() BeginTimer(__func__)
 
 #endif // METRICS_H
