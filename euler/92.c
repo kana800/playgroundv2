@@ -1,6 +1,5 @@
 #include <stdio.h>
 
-
 long int returnSqDigitSum(long int n)
 {
 	int lastdigit = 0;
